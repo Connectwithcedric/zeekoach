@@ -235,10 +235,10 @@ export function SessionsBoard({ bookedIds = [] }: { bookedIds?: string[] }) {
         right={
           <>
             <Card className="pb-[15px]">
-              <CardHeader title="Streaming now" />
+              <CardHeader title="Streaming now" href={`/live/${live[0]?.id}`} />
               <ul className="mt-[13px] space-y-[5px] px-[15px]">
                 {live.map((p) => (
-                  <PersonRow key={p.id} person={p} live sub={p.streaming} />
+                  <PersonRow key={p.id} person={p} live sub={<Link href={`/live/${p.id}`} className="hover:text-primary">{p.streaming}</Link>} />
                 ))}
               </ul>
             </Card>

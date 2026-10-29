@@ -77,12 +77,15 @@ export const people: Person[] = [
   { id: "lena", name: "Lena Novak", role: "koach", photo: "lena", distanceKm: 4.8, rating: 4.7, reviews: 21, followers: 720, following: 150, subscribers: 61, bio: "Running coach." },
 ];
 
-export type Location = { id: string; name: string; followers: number; address: string; meetUp: string };
+export type Location = { id: string; name: string; followers: number; address: string; meetUp: string; lat: number; lng: number; rating: number; reviews: number; verified?: boolean };
 
 export const locations: Location[] = [
-  { id: "teamfit", name: "TeamFit Gym & Fitness", followers: 396, address: "Knjeginje Zorke 12, Belgrade, Serbia", meetUp: "Meet at reception on the ground floor. Lockers and showers are available, bring a padlock." },
-  { id: "ada", name: "Ada Ciganlija Courts", followers: 1204, address: "Ada Ciganlija 2, Belgrade, Serbia", meetUp: "Court 4, next to the café. Bring water, shade is limited." },
-  { id: "zen", name: "Zen Studio Vračar", followers: 188, address: "Njegoševa 31, Belgrade, Serbia", meetUp: "Second floor, studio B. Mats are provided." },
+  { id: "teamfit", name: "TeamFit Gym & Fitness", followers: 396, address: "Knjeginje Zorke 12, Belgrade, Serbia", meetUp: "Meet at reception on the ground floor. Lockers and showers are available, bring a padlock.", lat: 44.8059, lng: 20.4693, rating: 4.2, reviews: 57, verified: true },
+  { id: "ada", name: "Ada Ciganlija Courts", followers: 1204, address: "Ada Ciganlija 2, Belgrade, Serbia", meetUp: "Court 4, next to the café. Bring water, shade is limited.", lat: 44.7866, lng: 20.4180, rating: 4.6, reviews: 203 },
+  { id: "zen", name: "Zen Studio Vračar", followers: 188, address: "Njegoševa 31, Belgrade, Serbia", meetUp: "Second floor, studio B. Mats are provided.", lat: 44.7985, lng: 20.4760, rating: 4.8, reviews: 34 },
+  { id: "kalemegdan", name: "Kalemegdan Outdoor Gym", followers: 512, address: "Kalemegdan Park, Belgrade, Serbia", meetUp: "By the basketball courts at the park entrance.", lat: 44.8225, lng: 20.4510, rating: 4.4, reviews: 88 },
+  { id: "usce", name: "Ušće Park Fields", followers: 640, address: "Ušće Park, New Belgrade, Serbia", meetUp: "Main field, next to the bike path.", lat: 44.8160, lng: 20.4380, rating: 4.3, reviews: 61 },
+  { id: "tasmajdan", name: "Tašmajdan Pool", followers: 930, address: "Ilije Garašanina 26, Belgrade, Serbia", meetUp: "Outdoor pool entrance, show your booking at the desk.", lat: 44.8075, lng: 20.4740, rating: 4.5, reviews: 140 },
 ];
 
 export type Session = {
