@@ -8,7 +8,7 @@ import { Award, CheckCheck, Compass, Eye, Flag, MessageSquare, Search, SendHoriz
 import { useAuth } from "@/components/auth-provider";
 import { PillTabs } from "@/components/tabs-bar";
 import { Avatar, Card, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
-import { currentUserId, getPerson, people, type Person, type PhotoKey } from "@/lib/data";
+import { currentUserId, getPerson, people, showSamples, type Person, type PhotoKey } from "@/lib/data";
 import { registerProfile } from "@/lib/live-data";
 import { supabase, type Profile } from "@/lib/supabase";
 
@@ -145,7 +145,7 @@ export function ChallengeBoard() {
   }, [fetchAll]);
 
   const live = real.filter((c) => c.status === "live");
-  const all = [...live, ...demo];
+  const all = [...live, ...(showSamples ? demo : [])];
   const shown = all.filter((c) => (tab === "results" ? c.done : tab === "following" ? c.following && !c.done : !c.done));
   const forMe = real.filter((c) => c.status === "pending" && c.b === me);
   const sent = real.filter((c) => c.status === "pending" && c.a === me);

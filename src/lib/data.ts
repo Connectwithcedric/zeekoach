@@ -155,6 +155,11 @@ export const posts: Post[] = [
   { id: "p11", image: "football", likes: 22, views: 198, comments: 5, kind: "photo" },
 ];
 
+// Sample people, sessions, posts and places fill the screens until real ones exist.
+// Set NEXT_PUBLIC_SHOW_SAMPLES=false to show only real content.
+export const showSamples = process.env.NEXT_PUBLIC_SHOW_SAMPLES !== "false";
+export const withSamples = <T extends { real?: boolean }>(list: T[]) => (showSamples ? list : list.filter((x) => x.real));
+
 export const getPerson = (id: string) => people.find((p) => p.id === id);
 export const getSession = (id: string) => sessions.find((s) => s.id === id);
 export const getPost = (id: string) => posts.find((p) => p.id === id);

@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { PostTile } from "@/components/post-tile";
 import { ExploreFollowing } from "@/components/tabs-bar";
 import { Card } from "@/components/ui";
-import { posts as demoPosts, type Post } from "@/lib/data";
+import { posts as demoPosts, showSamples, type Post } from "@/lib/data";
 import { useFeed } from "@/lib/posts";
 
 const square = (p: Post) => <PostTile key={p.id} post={p} w={194} h={194} className="aspect-square" />;
@@ -19,8 +19,8 @@ export function HomeFeed() {
   const { user } = useAuth();
   const [mode, setMode] = useState<"explore" | "following">("explore");
   const real = useFeed(mode, user?.id);
-  const list = mode === "explore" ? [...(real ?? []), ...demoPosts.filter((p) => p.kind !== "live")] : (real ?? []);
-  const liveTile = demoPosts.find((p) => p.kind === "live");
+  const list = mode === "explore" ? [...(real ?? []), ...(showSamples ? demoPosts.filter((p) => p.kind !== "live") : [])] : (real ?? []);
+  const liveTile = showSamples ? demoPosts.find((p) => p.kind === "live") : undefined;
   const [a, b, c, big, d, e, w2, ...rest] = list;
 
   return (

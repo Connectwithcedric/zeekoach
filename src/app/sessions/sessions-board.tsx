@@ -13,7 +13,7 @@ import { Avatar, Card, CardHeader, Fab, OutlineButton, FollowerStack, PersonRow,
 import { useAuth } from "@/components/auth-provider";
 import { useLiveSessions, useMyBookingIds } from "@/lib/live-data";
 import { useToday } from "@/lib/use-today";
-import { currentUserId, formatPrice, formatTime, getPerson, people, sameDay, sessionDate, sessions, type Session } from "@/lib/data";
+import { currentUserId, formatPrice, formatTime, getPerson, people, sameDay, sessionDate, sessions, withSamples, type Session } from "@/lib/data";
 
 const minutes = (t: string) => {
   const [h, m] = t.split(":").map(Number);
@@ -163,7 +163,7 @@ export function SessionsBoard({ bookedIds: demoBooked = [] }: { bookedIds?: stri
   const set = (patch: Partial<Filters>) => setF((prev) => ({ ...prev, ...patch }));
 
   const day = days[selected];
-  const list = sessions
+  const list = withSamples(sessions)
     .filter((s) => !!today && !!day && sameDay(sessionDate(s, today), day))
     .filter((s) => {
       const koach = getPerson(s.koachId)!;
@@ -182,7 +182,7 @@ export function SessionsBoard({ bookedIds: demoBooked = [] }: { bookedIds?: stri
     })
     .sort((a, b) => a.start.localeCompare(b.start));
 
-  const live = people.filter((p) => p.streaming).slice(0, 7);
+  const live = withSamples(people).filter((p) => p.streaming).slice(0, 7);
 
   return (
     <>

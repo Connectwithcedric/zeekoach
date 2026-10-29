@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
-import { getPerson } from "@/lib/data";
+import { getPerson, showSamples } from "@/lib/data";
 import { registerProfile } from "@/lib/live-data";
 import { supabase } from "@/lib/supabase";
 import { ChatBoard } from "./chat-board";
@@ -18,6 +18,16 @@ export function ChatRouter() {
     registerProfile(profile);
     return <RealChat me={getPerson(profile.id)!} startWith={startWith} />;
   }
+  if (!showSamples)
+    return (
+      <div className="mt-[30px] rounded-card bg-surface px-8 py-16 text-center">
+        <p className="text-[15px] font-bold">Chat with Koaches and friends</p>
+        <p className="mx-auto mt-1 max-w-[360px] text-[13px] font-semibold text-muted">Log in to send messages and photos.</p>
+        <Link href="/login" className="mt-5 inline-flex h-10 items-center rounded-[10px] bg-primary px-5 text-[13px] font-bold text-white">
+          Log in
+        </Link>
+      </div>
+    );
   return (
     <>
       {supabase && (
