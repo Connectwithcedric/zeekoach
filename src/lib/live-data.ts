@@ -23,6 +23,8 @@ export type SessionRow = {
   location_name: string;
   address: string;
   meet_up: string;
+  lat: number | null;
+  lng: number | null;
   koach: Profile | null;
 };
 
@@ -51,8 +53,20 @@ export function registerProfile(p: Profile) {
 export function registerSessionRow(r: SessionRow): Session {
   if (r.koach) registerProfile(r.koach);
   const start = new Date(r.starts_at);
-  const locationId = `loc-${r.id}`;
-  registerLocation({ id: locationId, name: r.location_name || (r.format === "stream" ? "Online" : "Location to be confirmed"), followers: 0, address: r.address, meetUp: r.meet_up, lat: 0, lng: 0, rating: 0, reviews: 0 });
+  // Sessions at the same place share one map pin.
+  const locationId = r.lat != null && r.lng != null ? `loc-${r.lat.toFixed(4)},${r.lng.toFixed(4)}` : `loc-${r.id}`;
+  registerLocation({
+    id: locationId,
+    name: r.location_name || (r.format === "stream" ? "Online" : "Location to be confirmed"),
+    followers: 0,
+    address: r.address,
+    meetUp: r.meet_up,
+    lat: r.lat ?? 0,
+    lng: r.lng ?? 0,
+    rating: 0,
+    reviews: 0,
+    real: true,
+  });
   const session: Session = {
     id: r.id,
     title: r.title,
