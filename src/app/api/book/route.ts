@@ -1,4 +1,4 @@
-import { failMessage, json, pool, priceFor, requestUser, saveBooking, stripe } from "@/lib/server/db";
+import { failMessage, giftCredit, json, pool, priceFor, requestUser, saveBooking, stripe } from "@/lib/server/db";
 
 // Starts a booking. Paid sessions go to Stripe Checkout (test mode); free sessions,
 // or every session while Stripe isn't connected yet, are booked straight away.
@@ -15,10 +15,13 @@ export async function POST(req: Request) {
   const guests = s.pricing === "private" ? 1 : Math.min(20, Math.max(1, Math.floor(Number(rawGuests) || 1)));
   if (s.booked + guests > s.capacity) return json({ error: "Sorry, there aren't enough spots left." }, 409);
   const total = priceFor(Number(s.price), s.pricing, guests);
+  // Gift credit pays first; Stripe charges whatever is left.
+  const credit = Math.min(total, await giftCredit(user.id, s.id));
+  const due = Math.round((total - credit) * 100) / 100;
 
-  if (!stripe || total === 0) {
+  if (!stripe || due === 0) {
     try {
-      await saveBooking(s.id, user.id, guests, total, null);
+      await saveBooking(s.id, user.id, guests, total, null, credit);
       return json({ booked: true });
     } catch (err) {
       return json({ error: failMessage(err) }, 409);
@@ -34,12 +37,12 @@ export async function POST(req: Request) {
         quantity: 1,
         price_data: {
           currency: "usd",
-          unit_amount: Math.round(total * 100),
-          product_data: { name: s.title, description: `${guests} ${guests === 1 ? "spot" : "spots"}, service fee and VAT included` },
+          unit_amount: Math.round(due * 100),
+          product_data: { name: s.title, description: `${guests} ${guests === 1 ? "spot" : "spots"}, service fee and VAT included${credit ? `, $${credit.toFixed(2)} gift credit applied` : ""}` },
         },
       },
     ],
-    metadata: { session_id: s.id, user_id: user.id, guests: String(guests) },
+    metadata: { session_id: s.id, user_id: user.id, guests: String(guests), total: String(total), credit: String(credit) },
     success_url: `${origin}/book/${s.id}?paid={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/book/${s.id}`,
   });

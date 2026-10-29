@@ -10,6 +10,7 @@ import { DualRange, Toggle } from "@/components/controls";
 import { PillTabs } from "@/components/tabs-bar";
 import { Avatar, Card, Fab, OutlineButton, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { getPerson, showSamples, type Person } from "@/lib/data";
+import { useGiftCredit } from "@/lib/gifts";
 
 type Tx = { id: string; who: string; text: string; when: string; daysAgo: number; amount: number; channel: "digital" | "cash" };
 
@@ -85,6 +86,8 @@ export function WalletBoard() {
   const [range, setRange] = useState<[number, number]>([0, 800]);
   const [note, setNote] = useState(false);
   const real = useRealWallet();
+  const { user: me } = useAuth();
+  const giftCredit = useGiftCredit(me?.id);
   const balance = real?.balance ?? demoBalance;
 
   const visible = (real?.txs ?? (showSamples ? transactions : [])).filter((t) => {
@@ -106,6 +109,12 @@ export function WalletBoard() {
           <span>Balance</span>
           <span>${balance.toLocaleString()}</span>
         </div>
+        {giftCredit > 0 && (
+          <p className="mt-1 flex justify-between text-xs font-semibold text-muted">
+            <span>Gift credit (used on bookings)</span>
+            <span>${giftCredit.toLocaleString()}</span>
+          </p>
+        )}
         {real && real.pending > 0 && (
           <p className="mt-1 flex justify-between text-xs font-semibold text-muted">
             <span>Pending (sessions not done yet)</span>
@@ -179,8 +188,8 @@ export function WalletBoard() {
 
   const right = (
     <>
-      <OutlineButton href="/settings/profile">Become a Koach!</OutlineButton>
-      <OutlineButton href="#">Send Gift Card</OutlineButton>
+      <OutlineButton href="/upgrade">Become a Koach!</OutlineButton>
+      <OutlineButton href="/wallet/gift">Send Gift Card</OutlineButton>
       <HelpUsGrow />
       <RightRailFooter />
     </>

@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 import { SessionDetail } from "@/components/session-detail";
 import { Photo } from "@/components/ui";
 import { reloadSessions } from "@/lib/live-data";
+import { useGiftCredit } from "@/lib/gifts";
 import { supabase } from "@/lib/supabase";
 import { useToday } from "@/lib/use-today";
 import { formatDate, formatPrice, getPerson, people, photo, sessionDate, type Person, type Session } from "@/lib/data";
@@ -101,6 +102,7 @@ export function BookingFlow({ session }: { session: Session }) {
   const [method, setMethod] = useState<Method>("card");
   const [card, setCard] = useState({ number: "", exp: "", cvc: "" });
   const { user } = useAuth();
+  const giftCredit = useGiftCredit(user?.id);
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
@@ -113,6 +115,8 @@ export function BookingFlow({ session }: { session: Session }) {
   const subtotal = subtotalBase + fee;
   const vat = subtotal * VAT;
   const total = subtotal + vat;
+  const credit = session.real ? Math.min(total, giftCredit) : 0;
+  const due = total - credit;
   const money = (n: number) => formatPrice(Math.round(n * 100) / 100);
   const api = async (path: string, body: object) => {
     const token = (await supabase!.auth.getSession()).data.session?.access_token;
@@ -287,6 +291,12 @@ export function BookingFlow({ session }: { session: Session }) {
                 <dt>Total:</dt>
                 <dd className="text-primary">{money(total)}</dd>
               </div>
+              {credit > 0 && (
+                <div className="mt-[14px] flex justify-between">
+                  <dt className="text-muted">Gift credit</dt>
+                  <dd className="text-primary">-{money(credit)}</dd>
+                </div>
+              )}
             </dl>
             <PrimaryButton onClick={() => setStep("payment")}>Next</PrimaryButton>
           </Panel>
@@ -340,14 +350,14 @@ export function BookingFlow({ session }: { session: Session }) {
                 <p className="mt-0.5 text-[13px] font-semibold text-muted">
                   {guests.length} {guests.length === 1 ? "Athlete" : "Athletes"}
                   <span className="mx-2 inline-block size-[3px] rounded-full bg-muted align-middle" />
-                  <span className="font-bold text-primary">{money(total)}</span>
+                  <span className="font-bold text-primary">{money(due)}</span>
                 </p>
               </div>
             </div>
 
             {payError && <p className="mt-[15px] rounded-[10px] bg-[#fdecee] px-3 py-2.5 text-[13px] font-semibold text-live">{payError}</p>}
             <PrimaryButton disabled={!cardReady || paying} onClick={pay}>
-              {paying ? "Booking…" : session.real && !user ? "Log in to book" : `Pay ${money(total)}`}
+              {paying ? "Booking…" : session.real && !user ? "Log in to book" : due === 0 && credit > 0 ? "Book with gift credit" : `Pay ${money(due)}`}
             </PrimaryButton>
             <p className="mt-[15px] text-center text-xs font-semibold leading-[1.5] text-muted">
               By clicking on the button above, I agree to the terms and conditions. {session.real ? "You pay on Stripe\u2019s secure page. Test mode: use card 4242 4242 4242 4242, any future date and any CVC." : "Demo session: no payment is taken."}
