@@ -125,7 +125,21 @@ export const sessions: Session[] = [
   { id: "running-club", title: "Riverside running club", koachId: "lena", format: "in-person", pricing: "per-person", price: 8, day: 2, start: "07:00", end: "08:00", ageMin: 14, indoor: false, attendees: 18, capacity: 30, likes: 40, rating: 4.7, reviews: 33, image: "run", description: "Easy 5 to 8 km group run with drills before and strides after.", equipment: "Running shoes and water.", locationId: "ada" },
 ];
 
-export type Post = { id: string; image: PhotoKey; likes: number; views: number; comments: number; kind: "photo" | "album" | "video" | "live"; locked?: boolean };
+export type Post = {
+  id: string;
+  image: PhotoKey;
+  likes: number;
+  views: number;
+  comments: number;
+  kind: "photo" | "album" | "video" | "live";
+  locked?: boolean;
+  // Real posts carry uploaded media and an author; demo posts use a stock photo.
+  real?: boolean;
+  media?: string[];
+  authorId?: string;
+  caption?: string;
+  createdAt?: string;
+};
 
 export const posts: Post[] = [
   { id: "p1", image: "bike1", likes: 0, views: 24, comments: 3, kind: "album" },
@@ -143,6 +157,7 @@ export const posts: Post[] = [
 
 export const getPerson = (id: string) => people.find((p) => p.id === id);
 export const getSession = (id: string) => sessions.find((s) => s.id === id);
+export const getPost = (id: string) => posts.find((p) => p.id === id);
 export const getLocation = (id: string) => locations.find((l) => l.id === id);
 
 // The signed-in user, until there is real authentication.
