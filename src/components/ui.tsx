@@ -22,14 +22,21 @@ export function CardHeader({ title, href = "#" }: { title: string; href?: string
 const frame = { member: "", koach: "border-2 border-primary", prokoach: "border-2 border-yellow" };
 
 export function Avatar({ person, size = 46, live = false }: { person: Person; size?: number; live?: boolean }) {
+  const initials = person.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?";
   return (
     <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
-      <img
-        src={photo(person.photo, size, size, true)}
-        alt=""
-        className={`size-full rounded-[12px] bg-primary-soft object-cover ${frame[person.role]}`}
-        loading="lazy"
-      />
+      {person.real && !person.avatarUrl ? (
+        <span style={{ fontSize: size * 0.36 }} className={`flex size-full items-center justify-center rounded-[12px] bg-primary-soft font-bold text-primary ${frame[person.role]}`}>
+          {initials}
+        </span>
+      ) : (
+        <img
+          src={person.avatarUrl ?? photo(person.photo, size, size, true)}
+          alt=""
+          className={`size-full rounded-[12px] bg-primary-soft object-cover ${frame[person.role]}`}
+          loading="lazy"
+        />
+      )}
       {live && <span className="absolute -right-1 -top-1 size-[10px] rounded-full border-2 border-white bg-live" aria-label="Live now" />}
     </span>
   );
@@ -153,15 +160,21 @@ export function RightRailFooter() {
   );
 }
 
-export function Fab() {
-  return (
-    <button
-      aria-label="Create"
-      className="fixed bottom-20 right-5 z-30 flex size-16 items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_30px_rgba(107,72,255,0.45)] hover:bg-primary-strong lg:bottom-10 lg:right-10 lg:size-20"
-    >
-      <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
-        <path d="M12 5v14M5 12h14" />
-      </svg>
+export function Fab({ href }: { href?: string }) {
+  const cls =
+    "fixed bottom-20 right-5 z-30 flex size-16 items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_30px_rgba(107,72,255,0.45)] hover:bg-primary-strong lg:bottom-10 lg:right-10 lg:size-20";
+  const icon = (
+    <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+  return href ? (
+    <Link href={href} aria-label="Create" className={cls}>
+      {icon}
+    </Link>
+  ) : (
+    <button aria-label="Create" className={cls}>
+      {icon}
     </button>
   );
 }

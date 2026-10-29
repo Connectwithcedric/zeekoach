@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, LogOut, MapPin, Pencil } from "lucide-react";
+import { LogOut, MapPin, Pencil } from "lucide-react";
 import { AuthCard } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { Card, FollowSuggestions, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { roleLabel } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
+import { MySessions } from "./my-sessions";
 
 export function MyProfile() {
   const router = useRouter();
@@ -62,17 +63,7 @@ export function MyProfile() {
           </div>
         </Card>
       }
-      center={
-        <Card className="px-8 py-14 text-center">
-          <h2 className="text-[17px] font-bold">{isKoach ? "Your sessions" : "Your bookings"}</h2>
-          <p className="mx-auto mt-2 max-w-[380px] text-[13px] font-semibold text-muted">
-            {isKoach ? "Create your first session so members can find and book you." : "Sessions you book will show up here."}
-          </p>
-          <Link href="/sessions" className="mt-6 inline-flex h-10 items-center gap-2 rounded-[10px] bg-primary px-5 text-[13px] font-bold text-white">
-            <CalendarPlus className="size-4" /> {isKoach ? "Create a session" : "Find a session"}
-          </Link>
-        </Card>
-      }
+      center={<MySessions userId={user.id} isKoach={isKoach} />}
       right={<><FollowSuggestions /><RightRailFooter /></>}
     />
   );
