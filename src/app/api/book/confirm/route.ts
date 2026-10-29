@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   if (!cs || !m || m.user_id !== user.id) return json({ error: "We couldn't find that payment." }, 404);
   if (cs.payment_status !== "paid") return json({ error: "The payment hasn't gone through." }, 402);
   try {
-    await saveBooking(m.session_id, user.id, Number(m.guests), (cs.amount_total ?? 0) / 100, cs.id);
+    await saveBooking(m.session_id, user.id, Number(m.guests), m.total ? Number(m.total) : (cs.amount_total ?? 0) / 100, cs.id, Number(m.credit ?? 0));
     return json({ booked: true, sessionId: m.session_id });
   } catch (err) {
     // The spot filled up between paying and coming back: refund straight away.
