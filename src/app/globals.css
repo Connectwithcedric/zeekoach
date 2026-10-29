@@ -1,36 +1,65 @@
 @import "tailwindcss";
 
-/* ZeeKOACH design tokens, taken from the Figma screens. */
+/* ZeeKOACH design tokens, sampled from the Figma file. */
 :root {
-  --zk-bg: #f4f3fd;
+  --zk-bg: #f6f6ff;
   --zk-surface: #ffffff;
-  --zk-surface-muted: #f1effd;
-  --zk-primary: #6c4df6;
-  --zk-primary-strong: #5435e0;
-  --zk-accent: #f5b400;
-  --zk-accent-text: #8a6300; /* yellow that passes contrast on white */
-  --zk-text: #1c1b29;
-  --zk-muted: #5f5e74; /* darker than the Figma grey for 4.5:1 contrast */
-  --zk-border: #e6e3f7;
-  --zk-live: #e5243b;
+  --zk-primary: #6b48ff;
+  --zk-primary-strong: #5a37f0;
+  --zk-primary-soft: #ece8ff;
+  --zk-yellow: #fdc300;
+  --zk-ink: #191a1e;
+  --zk-muted: #8e8e9e;
+  --zk-line: #ececf5;
+  --zk-live: #f02d3a;
 }
 
 @theme inline {
   --color-bg: var(--zk-bg);
   --color-surface: var(--zk-surface);
-  --color-surface-muted: var(--zk-surface-muted);
   --color-primary: var(--zk-primary);
   --color-primary-strong: var(--zk-primary-strong);
-  --color-accent: var(--zk-accent);
-  --color-accent-text: var(--zk-accent-text);
-  --color-ink: var(--zk-text);
+  --color-primary-soft: var(--zk-primary-soft);
+  --color-yellow: var(--zk-yellow);
+  --color-ink: var(--zk-ink);
   --color-muted: var(--zk-muted);
-  --color-line: var(--zk-border);
+  --color-line: var(--zk-line);
   --color-live: var(--zk-live);
   --font-sans: var(--font-jakarta);
+  --radius-card: 20px;
 }
 
 body {
   background: var(--zk-bg);
-  color: var(--zk-text);
+  color: var(--zk-ink);
+}
+
+/* Range sliders styled like the Figma filters. */
+.zk-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+}
+.zk-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid var(--zk-primary);
+  cursor: pointer;
+}
+.zk-range::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid var(--zk-primary);
+  cursor: pointer;
 }

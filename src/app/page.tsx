@@ -1,74 +1,86 @@
 import Link from "next/link";
-import { MapPin } from "lucide-react";
-import { Avatar, RoleBadge } from "@/components/avatar";
-import { Card, CardTitle } from "@/components/card";
-import { RightRail } from "@/components/right-rail";
-import { SessionCard } from "@/components/session-card";
-import { currentUserId, locations, people, sessions } from "@/lib/data";
+import { ArrowUp } from "lucide-react";
+import { PostTile } from "@/components/post-tile";
+import { ExploreFollowing } from "@/components/tabs-bar";
+import { Card, CardHeader, Fab, FollowButton, FollowSuggestions, OutlineButton, PersonRow, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
+import { currentUserId, locations, people, posts } from "@/lib/data";
 
 export default function HomePage() {
-  const nearby = people.filter((p) => p.id !== currentUserId && p.role !== "user").sort((a, b) => a.distanceKm - b.distanceKm);
-  const upcoming = [...sessions].sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
+  const nearby = people.filter((p) => p.id !== currentUserId && p.role !== "member").slice(0, 7);
+  const [a, b, c, big, d, e, live, video, f, g, h] = posts;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_300px]">
-      <aside className="order-2 space-y-4 lg:order-none">
-        <Card>
-          <CardTitle action={<span className="text-xs text-muted">{nearby.length} nearby</span>}>Koaches near you</CardTitle>
-          <ul className="space-y-4">
-            {nearby.map((p) => (
-              <li key={p.id} className="flex items-center gap-3">
-                <Avatar person={p} />
-                <div className="min-w-0 flex-1">
-                  <Link href={`/profile/${p.id}`} className="block truncate text-sm font-bold hover:text-primary">
-                    {p.name}
-                  </Link>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted">
-                    <RoleBadge person={p} /> {p.distanceKm} km
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
-        <Card>
-          <CardTitle>Popular locations</CardTitle>
-          <ul className="space-y-3">
-            {locations.map((l) => (
-              <li key={l.id} className="flex items-center gap-3">
-                <span className="flex size-10 items-center justify-center rounded-xl bg-surface-muted text-primary">
-                  <MapPin className="size-5" aria-hidden />
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-bold">{l.name}</p>
-                  <p className="text-xs text-muted">{l.followers} followers</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </aside>
-
-      <section aria-labelledby="feed-title" className="order-1 lg:order-none">
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <h1 id="feed-title" className="text-2xl font-bold">Sessions this week</h1>
-            <p className="text-sm text-muted">Book a spot with a Koach near you.</p>
-          </div>
-          <Link href="/sessions" className="text-sm font-semibold text-primary">
-            All sessions
-          </Link>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {upcoming.map((s) => (
-            <SessionCard key={s.id} session={s} />
-          ))}
-        </div>
-      </section>
-
-      <div className="hidden xl:block">
-        <RightRail />
-      </div>
-    </div>
+    <>
+      <ThreeColumns
+        left={
+          <>
+            <OutlineButton>Upgrade to ProKoach!</OutlineButton>
+            <Card className="pb-[15px]">
+              <CardHeader title={`${nearby.length + 6} Koaches near by`} />
+              <ul className="mt-[13px] space-y-[5px] px-[15px]">
+                {nearby.map((p) => (
+                  <PersonRow key={p.id} person={p} sub={`${p.distanceKm}km`} />
+                ))}
+              </ul>
+            </Card>
+            <Card className="pb-[15px]">
+              <div className="px-[25px] pt-[21px]">
+                <h2 className="text-[15px] font-bold">Popular Locations</h2>
+              </div>
+              <ul className="mt-[13px] space-y-[5px] px-[10px]">
+                {locations.map((l, i) => (
+                  <li key={l.id} className={`flex items-center gap-[15px] rounded-[14px] px-[15px] py-[10px] ${i === 0 ? "bg-bg" : ""}`}>
+                    <Photo k="gymInterior" w={40} h={40} className="size-10 rounded-[10px]" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[14px] font-bold">{l.name}</p>
+                      <p className="mt-1 text-[11px] font-semibold text-muted">{l.followers} Followers</p>
+                    </div>
+                    <FollowButton />
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </>
+        }
+        center={
+          <>
+            <ExploreFollowing />
+            <div className="relative">
+              <Link
+                href="#"
+                className="absolute -top-[45px] left-1/2 z-10 flex h-[34px] -translate-x-1/2 items-center gap-2 rounded-full bg-surface px-5 text-[13px] font-bold text-muted shadow-[0_6px_20px_rgba(25,26,30,0.08)]"
+              >
+                <ArrowUp className="size-4" aria-hidden /> New
+              </Link>
+              <div className="grid grid-cols-3 gap-[29px] max-sm:gap-2">
+                {[a, b, c].map((p) => (
+                  <PostTile key={p.id} post={p} w={194} h={194} className="aspect-square" />
+                ))}
+                <PostTile post={big} w={417} h={417} className="col-span-2 row-span-2 aspect-square" />
+                <PostTile post={d} w={194} h={194} className="aspect-square" />
+                <PostTile post={e} w={194} h={194} className="aspect-square" />
+              </div>
+              <div className="mt-[30px] grid grid-cols-2 gap-[30px] max-sm:mt-2 max-sm:gap-2">
+                <PostTile post={live} w={305} h={200} className="aspect-[305/200]" />
+                <PostTile post={video} w={305} h={200} className="aspect-[305/200]" />
+              </div>
+              <div className="mt-[30px] grid grid-cols-3 gap-[29px] max-sm:mt-2 max-sm:gap-2">
+                {[f, g, h].map((p) => (
+                  <PostTile key={p.id} post={p} w={194} h={194} className="aspect-square" />
+                ))}
+              </div>
+            </div>
+          </>
+        }
+        right={
+          <>
+            <OutlineButton>List your Location</OutlineButton>
+            <FollowSuggestions />
+            <RightRailFooter />
+          </>
+        }
+      />
+      <Fab />
+    </>
   );
 }
