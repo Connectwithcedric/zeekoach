@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, ChevronLeft, CreditCard, Search, Wallet, X } from "lucide-react";
 import { AppleIcon } from "@/components/brand-icons";
 import { useAuth } from "@/components/auth-provider";
@@ -114,26 +114,61 @@ export function BookingFlow({ session }: { session: Session }) {
   const vat = subtotal * VAT;
   const total = subtotal + vat;
   const money = (n: number) => formatPrice(Math.round(n * 100) / 100);
-  // Real sessions save a booking (no money moves yet); demo sessions just show the thank you screen.
+  const api = async (path: string, body: object) => {
+    const token = (await supabase!.auth.getSession()).data.session?.access_token;
+    const res = await fetch(path, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+    return (await res.json()) as { url?: string; booked?: boolean; error?: string };
+  };
+
+  // Real sessions are booked by the server: paid ones through Stripe Checkout (test mode), free ones straight away.
+  // Demo sessions just show the thank you screen.
   async function pay() {
     if (!session.real || !supabase) return setStep("done");
     if (!user) return router.push("/login");
     setPaying(true);
     setPayError(null);
-    const { error } = await supabase
-      .from("bookings")
-      .upsert({ session_id: session.id, user_id: user.id, guests: isPrivate ? 1 : guests.length, total: Math.round(total * 100) / 100, status: "confirmed" }, { onConflict: "session_id,user_id" });
+    const r = await api("/api/book", { sessionId: session.id, guests: guests.length });
+    if (r.url) return window.location.assign(r.url);
     setPaying(false);
-    if (error) return setPayError(error.message.includes("full") ? "Sorry, this session just filled up." : error.message);
+    if (r.error) return setPayError(r.error);
     reloadSessions();
     setStep("done");
   }
-  const cardReady = method !== "card" || (card.number.replace(/\s/g, "").length >= 12 && card.exp.length >= 4 && card.cvc.length >= 3);
+
+  // Back from Stripe: confirm the payment and save the booking.
+  const [paidId] = useState(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("paid")));
+  const [confirming, setConfirming] = useState(!!paidId);
+  useEffect(() => {
+    if (!paidId || !user || !supabase) return;
+    let alive = true;
+    api("/api/book/confirm", { checkoutId: paidId }).then((r) => {
+      if (!alive) return;
+      setConfirming(false);
+      window.history.replaceState(null, "", window.location.pathname);
+      if (r.error) {
+        setPayError(r.error);
+        setStep("payment");
+      } else {
+        reloadSessions();
+        setStep("done");
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [paidId, user]);
+
+  const cardReady = session.real || method !== "card" || (card.number.replace(/\s/g, "").length >= 12 && card.exp.length >= 4 && card.cvc.length >= 3);
 
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto bg-[#191a1e]/50 px-4 py-10">
       <div className="mx-auto flex justify-center">
-        {step === "who" && (
+        {confirming && step !== "done" && (
+          <Panel title="Confirming payment" onClose={close}>
+            <p className="mt-[30px] text-center text-[13px] font-semibold text-muted">One moment while we confirm your payment with Stripe…</p>
+          </Panel>
+        )}
+        {step === "who" && !confirming && (
           <Panel title="Who's Coming?" onClose={close}>
             <Summary session={session} date={date} />
             <ul className="mt-[25px] flex gap-[14px] overflow-x-auto pb-1">
@@ -282,7 +317,7 @@ export function BookingFlow({ session }: { session: Session }) {
               ))}
             </div>
 
-            {method === "card" && (
+            {method === "card" && !session.real && (
               <>
                 <p className="mt-[25px] text-[15px] font-bold">Add a card</p>
                 <div className="mt-[15px] flex h-10 items-center gap-3 rounded-[10px] bg-bg px-3 text-[13px] font-semibold">
@@ -315,7 +350,7 @@ export function BookingFlow({ session }: { session: Session }) {
               {paying ? "Booking…" : session.real && !user ? "Log in to book" : `Pay ${money(total)}`}
             </PrimaryButton>
             <p className="mt-[15px] text-center text-xs font-semibold leading-[1.5] text-muted">
-              By clicking on the button above, I agree to the terms and conditions. Demo build: no payment is taken.
+              By clicking on the button above, I agree to the terms and conditions. {session.real ? "You pay on Stripe\u2019s secure page. Test mode: use card 4242 4242 4242 4242, any future date and any CVC." : "Demo session: no payment is taken."}
             </p>
           </Panel>
         )}
