@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowUp } from "lucide-react";
 import { PostTile } from "@/components/post-tile";
 import { ExploreFollowing } from "@/components/tabs-bar";
-import { Card, CardHeader, Fab, FollowButton, FollowSuggestions, OutlineButton, PersonRow, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
+import { FollowToggle } from "@/components/follow-toggle";
+import { Card, CardHeader, Fab, FollowSuggestions, OutlineButton, PersonRow, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { currentUserId, locations, people, posts } from "@/lib/data";
 
 export default function HomePage() {
@@ -33,7 +34,7 @@ export default function HomePage() {
                       <p className="truncate text-[14px] font-bold">{l.name}</p>
                       <p className="mt-1 text-[11px] font-semibold text-muted">{l.followers} Followers</p>
                     </div>
-                    <FollowButton />
+                    <FollowToggle personId={l.id} />
                   </li>
                 ))}
               </ul>

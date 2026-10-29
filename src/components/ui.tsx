@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
+import { FollowToggle } from "@/components/follow-toggle";
 import { AppleIcon, FacebookIcon, InstagramIcon, LinkedinIcon, PlayIcon, TwitterIcon, YoutubeIcon } from "@/components/brand-icons";
 import { currentUserId, people, photo, type Person, type PhotoKey } from "@/lib/data";
 
@@ -71,10 +72,6 @@ export function OutlineButton({ children, href = "#" }: { children: React.ReactN
   );
 }
 
-export function FollowButton() {
-  return <button className="text-xs font-bold text-primary hover:underline">Follow</button>;
-}
-
 export function PersonRow({ person, sub, live = false }: { person: Person; sub: React.ReactNode; live?: boolean }) {
   return (
     <li className="flex items-center gap-[15px] rounded-[14px] px-[10px] py-[10px] hover:bg-bg">
@@ -88,7 +85,7 @@ export function PersonRow({ person, sub, live = false }: { person: Person; sub: 
         </Link>
         <div className="mt-[6px] text-[13px] font-semibold text-muted">{sub}</div>
       </div>
-      <FollowButton />
+      <FollowToggle personId={person.id} />
     </li>
   );
 }

@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { LogOut, MapPin, Pencil } from "lucide-react";
 import { AuthCard } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
+import { followCounts } from "@/components/follow-toggle";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { Card, FollowSuggestions, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { roleLabel } from "@/lib/data";
@@ -14,6 +16,11 @@ import { MySessions } from "./my-sessions";
 export function MyProfile() {
   const router = useRouter();
   const { ready, user, profile } = useAuth();
+  const [counts, setCounts] = useState({ followers: 0, following: 0 });
+  const uid = user?.id;
+  useEffect(() => {
+    if (uid) followCounts(uid).then(setCounts);
+  }, [uid]);
 
   if (!ready) return <AuthCard title="Your profile"><p className="text-[13px] font-semibold text-muted">Loading…</p></AuthCard>;
   if (!user || !profile)
@@ -40,6 +47,7 @@ export function MyProfile() {
               </span>
             </div>
             <h1 className="mt-5 text-[19px] font-bold">{profile.name || "New member"}</h1>
+            <Link href={`/profile/${profile.id}`} className="text-xs font-bold text-primary">See your public profile</Link>
             {profile.username && <p className="text-[13px] font-semibold text-muted">@{profile.username}</p>}
             {profile.city && <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-muted"><MapPin className="size-3.5" /> {profile.city}</p>}
             <div className="mt-5 flex w-full gap-3">
@@ -55,8 +63,8 @@ export function MyProfile() {
               </button>
             </div>
             <div className="mt-5 grid w-full grid-cols-3 rounded-[14px] bg-bg py-3 text-center">
-              {["Followers", "Following", "Subscribers"].map((l) => (
-                <div key={l}><p className="text-[15px] font-bold">0</p><p className="text-[11px] font-semibold text-muted">{l}</p></div>
+              {([["Followers", counts.followers], ["Following", counts.following], ["Subscribers", 0]] as const).map(([l, n]) => (
+                <div key={l}><p className="text-[15px] font-bold">{n}</p><p className="text-[11px] font-semibold text-muted">{l}</p></div>
               ))}
             </div>
             <p className="mt-5 text-[13px] font-semibold leading-relaxed text-muted">{profile.bio || "No bio yet. Tell people what you love to train."}</p>
