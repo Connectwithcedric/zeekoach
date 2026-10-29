@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/components/auth-provider";
+import { registerProfile } from "@/lib/live-data";
+import { referralLink, shareReferral } from "@/lib/referral";
+import { supabase, type Profile } from "@/lib/supabase";
 import { Banknote, Copy, CreditCard, Forward, Landmark, Search, WalletCards } from "lucide-react";
 import { DualRange, Toggle } from "@/components/controls";
 import { PillTabs } from "@/components/tabs-bar";
@@ -18,7 +22,58 @@ const transactions: Tx[] = [
   { id: "t6", who: "marija", text: "Cash payment from Marija Adams", when: "Oct 12", daysAgo: 17, amount: 20, channel: "cash" },
 ];
 
-const balance = 2966;
+type BookingRow = { id: string; total: number; status: string; created_at: string; user?: Profile | null; session: { title: string; koach_id: string; ends_at: string } | null };
+
+const daysAgo = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+const shortDate = (iso: string) => {
+  const d = daysAgo(iso);
+  return d === 0 ? "Today" : d === 1 ? "Yesterday" : new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" });
+};
+// Koaches receive the session price; the 10% service fee and 20% VAT on top go to ZeeKoach and tax.
+const koachShare = (total: number) => Math.round((Number(total) / 1.32) * 100) / 100;
+
+// Real money movements for the signed-in person: what they paid for bookings and, for Koaches, what they earned.
+function useRealWallet() {
+  const { user } = useAuth();
+  const [data, setData] = useState<{ txs: Tx[]; balance: number; pending: number } | null>(null);
+  useEffect(() => {
+    if (!supabase || !user) return;
+    let alive = true;
+    (async () => {
+      const [{ data: mine }, { data: earned }] = await Promise.all([
+        supabase!.from("bookings").select("id, total, status, created_at, session:sessions(title, koach_id, ends_at)").eq("user_id", user.id).eq("status", "confirmed"),
+        supabase!
+          .from("bookings")
+          .select("id, total, status, created_at, user:profiles!bookings_user_id_fkey(*), session:sessions!inner(title, koach_id, ends_at)")
+          .eq("session.koach_id", user.id)
+          .eq("status", "confirmed"),
+      ]);
+      const txs: Tx[] = [];
+      for (const b of (mine ?? []) as unknown as BookingRow[]) {
+        if (!b.session) continue;
+        txs.push({ id: `p-${b.id}`, who: b.session.koach_id, text: `You booked “${b.session.title}”`, when: shortDate(b.created_at), daysAgo: daysAgo(b.created_at), amount: -Number(b.total), channel: "digital" });
+      }
+      let balance = 0;
+      let pending = 0;
+      for (const b of (earned ?? []) as unknown as BookingRow[]) {
+        if (!b.session || !b.user) continue;
+        registerProfile(b.user);
+        const amount = koachShare(b.total);
+        if (new Date(b.session.ends_at) < new Date()) balance += amount;
+        else pending += amount;
+        txs.push({ id: `e-${b.id}`, who: b.user.id, text: `${b.user.name || "Someone"} booked “${b.session.title}”`, when: shortDate(b.created_at), daysAgo: daysAgo(b.created_at), amount, channel: "digital" });
+      }
+      txs.sort((a, b) => a.daysAgo - b.daysAgo);
+      if (alive) setData({ txs, balance: Math.round(balance * 100) / 100, pending: Math.round(pending * 100) / 100 });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [user]);
+  return data;
+}
+
+const demoBalance = 2966;
 const frames = ["Always", "This Month", "Last Month", "Custom"] as const;
 
 export function WalletBoard() {
@@ -28,8 +83,11 @@ export function WalletBoard() {
   const [dirIn, setIn] = useState(true);
   const [dirOut, setOut] = useState(true);
   const [range, setRange] = useState<[number, number]>([0, 800]);
+  const [note, setNote] = useState(false);
+  const real = useRealWallet();
+  const balance = real?.balance ?? demoBalance;
 
-  const visible = transactions.filter((t) => {
+  const visible = (real?.txs ?? transactions).filter((t) => {
     const abs = Math.abs(t.amount);
     if (t.channel !== channel) return false;
     if (query && !t.text.toLowerCase().includes(query.toLowerCase())) return false;
@@ -48,6 +106,12 @@ export function WalletBoard() {
           <span>Balance</span>
           <span>${balance.toLocaleString()}</span>
         </div>
+        {real && real.pending > 0 && (
+          <p className="mt-1 flex justify-between text-xs font-semibold text-muted">
+            <span>Pending (sessions not done yet)</span>
+            <span>${real.pending.toLocaleString()}</span>
+          </p>
+        )}
         <ul className="mt-[18px] space-y-[14px] text-[13px] font-semibold text-muted">
           {[
             { label: "Payment Methods", Icon: CreditCard },
@@ -55,12 +119,13 @@ export function WalletBoard() {
             { label: "Withdraw", Icon: Landmark },
           ].map(({ label, Icon }) => (
             <li key={label}>
-              <button className="flex items-center gap-3 hover:text-primary">
+              <button onClick={() => setNote(true)} className="flex items-center gap-3 hover:text-primary">
                 <Icon className="size-4" aria-hidden /> {label}
               </button>
             </li>
           ))}
         </ul>
+        {note && <p className="mt-4 rounded-[10px] bg-primary-soft px-3 py-2 text-xs font-semibold text-primary">Payouts, top-ups and saved cards open once payments are switched on with Stripe.</p>}
       </Card>
       <Card className="px-[25px] pb-[25px] pt-[21px]">
         <h2 className="text-[15px] font-bold">Filters</h2>
@@ -91,12 +156,12 @@ export function WalletBoard() {
       />
       <Card className="min-h-[290px] px-[15px] py-[15px]">
         {visible.length === 0 ? (
-          <p className="py-16 text-center text-[13px] font-semibold text-muted">No transactions match these filters.</p>
+          <p className="py-16 text-center text-[13px] font-semibold text-muted">{real && !real.txs.length ? "No transactions yet. Bookings you make or receive show up here." : "No transactions match these filters."}</p>
         ) : (
           <ul className="space-y-[5px]">
             {visible.map((t) => (
               <li key={t.id} className="flex items-center gap-[15px] rounded-[14px] px-[10px] py-[10px] hover:bg-bg">
-                <Avatar person={getPerson(t.who) as Person} size={40} />
+                {getPerson(t.who) && <Avatar person={getPerson(t.who) as Person} size={40} />}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-bold">{t.text}</p>
                   <p className="mt-1 text-xs font-semibold text-muted">{t.when}</p>
@@ -114,7 +179,7 @@ export function WalletBoard() {
 
   const right = (
     <>
-      <OutlineButton href="#">Become a Koach!</OutlineButton>
+      <OutlineButton href="/settings/profile">Become a Koach!</OutlineButton>
       <OutlineButton href="#">Send Gift Card</OutlineButton>
       <HelpUsGrow />
       <RightRailFooter />
@@ -130,7 +195,9 @@ export function WalletBoard() {
 }
 
 export function HelpUsGrow() {
-  const link = "www.zeekoach.com/aleksandar";
+  const { profile } = useAuth();
+  const full = profile ? referralLink(profile) : "https://www.zeekoach.com/aleksandar";
+  const link = full.replace(/^https?:\/\//, "");
   const [copied, setCopied] = useState(false);
   return (
     <Card className="px-[25px] py-[22px]">
@@ -147,14 +214,18 @@ export function HelpUsGrow() {
           <button
             aria-label="Copy link"
             onClick={() => {
-              navigator.clipboard?.writeText(`https://${link}`);
+              navigator.clipboard?.writeText(full);
               setCopied(true);
             }}
             className="flex size-8 items-center justify-center rounded-[8px] bg-bg text-primary hover:bg-primary-soft"
           >
             <Copy className="size-4" />
           </button>
-          <button aria-label="Share link" className="flex size-8 items-center justify-center rounded-[8px] bg-bg text-primary hover:bg-primary-soft">
+          <button
+            aria-label="Share link"
+            onClick={async () => profile && (await shareReferral(profile)) === "copied" && setCopied(true)}
+            className="flex size-8 items-center justify-center rounded-[8px] bg-bg text-primary hover:bg-primary-soft"
+          >
             <Forward className="size-4" />
           </button>
         </span>

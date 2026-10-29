@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthCard, Field, FormMessage, NotConfigured, SubmitButton } from "@/components/auth-card";
+import { storedReferral } from "@/lib/referral";
 import { supabase } from "@/lib/supabase";
 
 const roles = [
@@ -28,7 +29,7 @@ export function SignupForm() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password: String(form.get("password")),
-      options: { data: { name: String(form.get("name")).trim(), role }, emailRedirectTo: `${location.origin}/me` },
+      options: { data: { name: String(form.get("name")).trim(), role, ref: storedReferral() }, emailRedirectTo: `${location.origin}/me` },
     });
     setBusy(false);
     if (error) return setError(error.message);

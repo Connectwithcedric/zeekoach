@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/components/auth-provider";
+import { registerProfile } from "@/lib/live-data";
+import { referralLink, shareReferral } from "@/lib/referral";
+import { supabase, type Profile } from "@/lib/supabase";
 import { Check, CheckCheck, Copy, Eye, FileSignature, Forward, Hourglass, Megaphone, MoreHorizontal, Plus, Repeat2, SlidersHorizontal, UserSearch, Wallet } from "lucide-react";
 import { Toggle } from "@/components/controls";
 import { PillTabs } from "@/components/tabs-bar";
@@ -30,18 +34,60 @@ const ads: { id: string; tab: "ads" | "shared" | "recruitment"; title: string; s
   { id: "a4", tab: "recruitment", title: "Become a Koach", sub: "Earn 20% on every Koach you bring", image: "coach", cta: "Invite a Koach" },
 ];
 
+type Stats = { shares: number; views: number; signups: number; conversions: number; holdback: number; earnings: number; referrals: { id: string; type: "Direct" | "Indirect"; converted: boolean }[] };
+
+function window_(frame: (typeof frames)[number]) {
+  const now = new Date();
+  const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (frame === "This Month") return { since: thisMonth.toISOString() };
+  if (frame === "Last Month") return { since: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString(), until: thisMonth.toISOString() };
+  return {};
+}
+
 export function ShareBoard() {
+  const { profile } = useAuth();
+  const [real, setReal] = useState<Stats | null>(null);
   const [frame, setFrame] = useState<(typeof frames)[number]>("Always");
   const [direct, setDirect] = useState(true);
   const [indirect, setIndirect] = useState(true);
   const [tab, setTab] = useState<"ads" | "shared" | "recruitment">("ads");
   const [copied, setCopied] = useState(false);
   const [sharedIds, setSharedIds] = useState<string[]>([]);
-  const st = statsByFrame[frame];
-  const link = "www.zeekoach.com/aleksandar";
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!supabase || !profile) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase!.rpc("referral_stats", window_(frame));
+      const stats = data as Stats | null;
+      if (!stats) return;
+      const ids = stats.referrals.map((r) => r.id);
+      if (ids.length) {
+        const { data: ps } = await supabase!.from("profiles").select("*").in("id", ids);
+        (ps as Profile[] | null)?.forEach(registerProfile);
+      }
+      if (alive) setReal(stats);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [profile, frame, tick]);
+
+  const st = real ?? statsByFrame[frame];
+  const fullLink = profile ? referralLink(profile) : "https://www.zeekoach.com/aleksandar";
+  const link = fullLink.replace(/^https?:\/\//, "");
+  const myReferrals = real ? real.referrals.map((r) => ({ id: r.id, type: r.type, added: r.converted })) : referrals;
+  const share = async (text?: string) => {
+    if (!profile) return false;
+    const how = await shareReferral(profile, text);
+    if (how === "copied") setCopied(true);
+    setTimeout(() => setTick((n) => n + 1), 500);
+    return how !== "cancelled";
+  };
 
   const statRows = [
-    { label: "Shares", value: st.shares + sharedIds.length, Icon: Forward },
+    { label: "Shares", value: st.shares + (real ? 0 : sharedIds.length), Icon: Forward },
     { label: "Views", value: st.views, Icon: Eye },
     { label: "Signups", value: st.signups, Icon: FileSignature },
     { label: "Conversions", value: st.conversions, Icon: Repeat2 },
@@ -82,11 +128,12 @@ export function ShareBoard() {
         </div>
         <div className="mt-4 flex items-center gap-2">
           <span className="truncate text-xs font-bold text-primary">{link}</span>
-          <button aria-label="Copy link" onClick={() => { navigator.clipboard?.writeText(`https://${link}`); setCopied(true); }} className="flex size-8 items-center justify-center rounded-[8px] bg-bg text-primary hover:bg-primary-soft">
+          <button aria-label="Copy link" onClick={() => { navigator.clipboard?.writeText(fullLink); setCopied(true); }} className="flex size-8 items-center justify-center rounded-[8px] bg-bg text-primary hover:bg-primary-soft">
             {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
           </button>
-          <button aria-label="Share link" className="flex size-8 items-center justify-center rounded-[8px] bg-bg text-primary hover:bg-primary-soft"><Forward className="size-4" /></button>
+          <button aria-label="Share link" onClick={() => share()} className="flex size-8 items-center justify-center rounded-[8px] bg-bg text-primary hover:bg-primary-soft"><Forward className="size-4" /></button>
         </div>
+        {!profile && supabase && <p className="mt-3 text-xs font-semibold text-muted">These are sample numbers. <a href="/login" className="font-bold text-primary">Log in</a> to get your own link and stats.</p>}
       </Card>
       <PillTabs
         className="px-[40px]"
@@ -110,7 +157,10 @@ export function ShareBoard() {
           <div className="mt-[18px] overflow-hidden rounded-[16px]">
             <Photo k={a.image} w={600} h={460} className="h-[460px] w-full max-sm:h-[280px]" />
             <button
-              onClick={() => setSharedIds((s) => (s.includes(a.id) ? s : [...s, a.id]))}
+              onClick={async () => {
+                if (profile && !(await share(a.sub))) return;
+                setSharedIds((s) => (s.includes(a.id) ? s : [...s, a.id]));
+              }}
               className="flex h-[58px] w-full items-center justify-between bg-primary px-[25px] text-[15px] font-bold text-white hover:bg-primary-strong"
             >
               {sharedIds.includes(a.id) ? "Shared, thanks!" : a.cta}
@@ -130,10 +180,12 @@ export function ShareBoard() {
           <span className="text-xs font-bold text-primary">All</span>
         </div>
         <ul className="mt-[13px] space-y-[5px] px-[15px]">
-          {referrals
+          {myReferrals.length === 0 && <li className="px-[10px] py-4 text-xs font-semibold text-muted">No one has joined with your link yet. Share it!</li>}
+          {myReferrals
             .filter((r) => (r.type === "Direct" ? direct : indirect))
             .map((r) => {
-              const p = getPerson(r.id) as Person;
+              const p = getPerson(r.id) as Person | undefined;
+              if (!p) return null;
               return (
                 <li key={r.id} className="flex items-center gap-[15px] rounded-[14px] px-[10px] py-[8px] hover:bg-bg">
                   <Avatar person={p} size={40} />
