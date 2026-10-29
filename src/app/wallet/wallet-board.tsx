@@ -100,7 +100,7 @@ export function WalletBoard() {
 
   const left = (
     <>
-      <OutlineButton href="#">Manage a location</OutlineButton>
+      <OutlineButton href="/locations/new">Manage a location</OutlineButton>
       <Card className="px-[25px] py-[22px]">
         <div className="flex items-center justify-between text-[13px] font-bold text-primary">
           <span>Balance</span>

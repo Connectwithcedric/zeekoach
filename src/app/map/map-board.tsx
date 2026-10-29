@@ -80,7 +80,7 @@ export function MapBoard() {
                 className={`w-[235px] cursor-pointer rounded-[16px] bg-surface p-[16px] ${active ? "outline outline-2 outline-[#3d8bff]" : ""}`}
               >
                 <div className="flex items-start justify-between">
-                  <Photo k="gymInterior" w={40} h={40} className="size-10 rounded-[8px]" />
+                  {l.photo ? <img src={l.photo} alt="" className="size-10 rounded-[8px] object-cover" /> : <Photo k="gymInterior" w={40} h={40} className="size-10 rounded-[8px]" />}
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lng}`}
                     target="_blank"
