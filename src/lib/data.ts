@@ -50,6 +50,8 @@ export type Person = {
   subscribers: number;
   bio: string;
   streaming?: string; // class name when live right now
+  real?: boolean; // a signed-up account from the database, not demo data
+  avatarUrl?: string | null;
 };
 
 export const people: Person[] = [
@@ -109,6 +111,7 @@ export type Session = {
   description: string;
   equipment: string;
   locationId: string;
+  real?: boolean;
 };
 
 export const sessions: Session[] = [
@@ -169,3 +172,14 @@ export function formatTime(t: string) {
   const h12 = h % 12 || 12;
   return m ? `${h12}:${String(m).padStart(2, "0")}${suffix}` : `${h12}${suffix}`;
 }
+
+// Real accounts and sessions from the database are added to the demo lists in the
+// browser, so every screen that looks things up by id works with both.
+function upsert<T extends { id: string }>(list: T[], item: T) {
+  const i = list.findIndex((x) => x.id === item.id);
+  if (i === -1) list.push(item);
+  else list[i] = item;
+}
+export const registerPerson = (p: Person) => upsert(people, p);
+export const registerSession = (s: Session) => upsert(sessions, s);
+export const registerLocation = (l: Location) => upsert(locations, l);

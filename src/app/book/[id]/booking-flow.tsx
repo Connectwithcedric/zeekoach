@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check, ChevronLeft, CreditCard, Search, Wallet, X } from "lucide-react";
 import { AppleIcon } from "@/components/brand-icons";
+import { useAuth } from "@/components/auth-provider";
 import { SessionDetail } from "@/components/session-detail";
 import { Photo } from "@/components/ui";
+import { reloadSessions } from "@/lib/live-data";
+import { supabase } from "@/lib/supabase";
 import { useToday } from "@/lib/use-today";
 import { formatDate, formatPrice, getPerson, people, photo, sessionDate, type Person, type Session } from "@/lib/data";
 
@@ -97,6 +100,9 @@ export function BookingFlow({ session }: { session: Session }) {
   const [ext, setExt] = useState({ name: "", email: "", phone: "" });
   const [method, setMethod] = useState<Method>("card");
   const [card, setCard] = useState({ number: "", exp: "", cvc: "" });
+  const { user } = useAuth();
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   const toggle = (p: Person) =>
     setGuests((g) => (g.some((x) => x.id === p.id) ? g.filter((x) => x.id !== p.id) : g.length < spots ? [...g, { id: p.id, name: p.name, person: p }] : g));
@@ -108,6 +114,20 @@ export function BookingFlow({ session }: { session: Session }) {
   const vat = subtotal * VAT;
   const total = subtotal + vat;
   const money = (n: number) => formatPrice(Math.round(n * 100) / 100);
+  // Real sessions save a booking (no money moves yet); demo sessions just show the thank you screen.
+  async function pay() {
+    if (!session.real || !supabase) return setStep("done");
+    if (!user) return router.push("/login");
+    setPaying(true);
+    setPayError(null);
+    const { error } = await supabase
+      .from("bookings")
+      .upsert({ session_id: session.id, user_id: user.id, guests: isPrivate ? 1 : guests.length, total: Math.round(total * 100) / 100, status: "confirmed" }, { onConflict: "session_id,user_id" });
+    setPaying(false);
+    if (error) return setPayError(error.message.includes("full") ? "Sorry, this session just filled up." : error.message);
+    reloadSessions();
+    setStep("done");
+  }
   const cardReady = method !== "card" || (card.number.replace(/\s/g, "").length >= 12 && card.exp.length >= 4 && card.cvc.length >= 3);
 
   return (
@@ -290,8 +310,9 @@ export function BookingFlow({ session }: { session: Session }) {
               </div>
             </div>
 
-            <PrimaryButton disabled={!cardReady} onClick={() => setStep("done")}>
-              Pay {money(total)}
+            {payError && <p className="mt-[15px] rounded-[10px] bg-[#fdecee] px-3 py-2.5 text-[13px] font-semibold text-live">{payError}</p>}
+            <PrimaryButton disabled={!cardReady || paying} onClick={pay}>
+              {paying ? "Booking…" : session.real && !user ? "Log in to book" : `Pay ${money(total)}`}
             </PrimaryButton>
             <p className="mt-[15px] text-center text-xs font-semibold leading-[1.5] text-muted">
               By clicking on the button above, I agree to the terms and conditions. Demo build: no payment is taken.

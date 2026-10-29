@@ -8,7 +8,9 @@ import { DualRange, SingleRange, Toggle } from "@/components/controls";
 import { Modal } from "@/components/modal";
 import { SessionDetail } from "@/components/session-detail";
 import { ExploreFollowing } from "@/components/tabs-bar";
-import { Avatar, Card, CardHeader, Fab, FollowerStack, FollowSuggestions, PersonRow, RightRailFooter, ThreeColumns } from "@/components/ui";
+import { Avatar, Card, CardHeader, Fab, OutlineButton, FollowerStack, FollowSuggestions, PersonRow, RightRailFooter, ThreeColumns } from "@/components/ui";
+import { useAuth } from "@/components/auth-provider";
+import { useLiveSessions, useMyBookingIds } from "@/lib/live-data";
 import { useToday } from "@/lib/use-today";
 import { currentUserId, formatPrice, formatTime, getPerson, people, sameDay, sessionDate, sessions, type Session } from "@/lib/data";
 
@@ -91,9 +93,9 @@ const weekdayLong = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Fr
 const monthLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const ordinal = (n: number) => n + (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");
 
-function SessionRow({ s, booked, onOpen, onBook }: { s: Session; booked: boolean; onOpen: () => void; onBook: () => void }) {
+function SessionRow({ s, me, booked, onOpen, onBook }: { s: Session; me: string; booked: boolean; onOpen: () => void; onBook: () => void }) {
   const koach = getPerson(s.koachId)!;
-  const mine = s.koachId === currentUserId;
+  const mine = s.koachId === me;
   return (
     <li className="flex items-center gap-5 py-[15px]">
       <button onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-5 text-left">
@@ -116,13 +118,16 @@ function SessionRow({ s, booked, onOpen, onBook }: { s: Session; booked: boolean
           </span>
         </span>
       </button>
+      {s.real && s.attendees >= s.capacity && !booked && !mine ? (
+        <span className="text-xs font-bold text-muted">Full</span>
+      ) : null}
       {s.pricing === "per-person" && s.attendees > 3 && (
         <span className="hidden sm:block">
           <FollowerStack extra={s.attendees - 3} />
         </span>
       )}
       {mine ? (
-        <Link href="#" className="flex h-9 w-[100px] items-center justify-center rounded-[10px] bg-bg text-[13px] font-bold text-primary">
+        <Link href={s.real ? `/sessions/new?edit=${s.id}` : "#"} className="flex h-9 w-[100px] items-center justify-center rounded-[10px] bg-bg text-[13px] font-bold text-primary">
           Edit
         </Link>
       ) : booked ? (
@@ -138,8 +143,14 @@ function SessionRow({ s, booked, onOpen, onBook }: { s: Session; booked: boolean
   );
 }
 
-export function SessionsBoard({ bookedIds = [] }: { bookedIds?: string[] }) {
+export function SessionsBoard({ bookedIds: demoBooked = [] }: { bookedIds?: string[] }) {
   const router = useRouter();
+  useLiveSessions();
+  const { user, profile } = useAuth();
+  const me = user?.id ?? currentUserId;
+  const myBookings = useMyBookingIds(user?.id);
+  const bookedIds = user ? myBookings : demoBooked;
+  const canCreate = !!profile && profile.role !== "member";
   const today = useToday();
   const days = useMemo(
     () => (today ? Array.from({ length: 7 }, (_, i) => new Date(today.getFullYear(), today.getMonth(), today.getDate() + i)) : []),
@@ -175,7 +186,12 @@ export function SessionsBoard({ bookedIds = [] }: { bookedIds?: string[] }) {
   return (
     <>
       <ThreeColumns
-        left={<FiltersPanel f={f} set={set} />}
+        left={
+          <>
+            {canCreate && <OutlineButton href="/sessions/new">+ Create a session</OutlineButton>}
+            <FiltersPanel f={f} set={set} />
+          </>
+        }
         center={
           <>
             <ExploreFollowing />
@@ -216,7 +232,7 @@ export function SessionsBoard({ bookedIds = [] }: { bookedIds?: string[] }) {
                 ) : list.length ? (
                   <ul className="py-[10px]">
                     {list.map((s) => (
-                      <SessionRow key={s.id} s={s} booked={bookedIds.includes(s.id)} onOpen={() => setOpen(s)} onBook={() => router.push(`/book/${s.id}`)} />
+                      <SessionRow key={s.id} s={s} me={me} booked={bookedIds.includes(s.id)} onOpen={() => setOpen(s)} onBook={() => router.push(`/book/${s.id}`)} />
                     ))}
                   </ul>
                 ) : (
@@ -252,7 +268,7 @@ export function SessionsBoard({ bookedIds = [] }: { bookedIds?: string[] }) {
           <SessionDetail session={open} bookedBanner={bookedIds.includes(open.id)} />
         </Modal>
       )}
-      <Fab />
+      <Fab href={canCreate ? "/sessions/new" : undefined} />
     </>
   );
 }
