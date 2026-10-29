@@ -1,4 +1,5 @@
-import { Eye, Layers, Lock, MessageSquareText, ThumbsUp } from "lucide-react";
+import Link from "next/link";
+import { Eye, Layers, Lock, MessageSquareText, Play, ThumbsUp } from "lucide-react";
 import { Photo } from "@/components/ui";
 import type { Post } from "@/lib/data";
 
@@ -30,8 +31,17 @@ function Stats({ post }: { post: Post }) {
 export function PostTile({ post, w, h, className = "" }: { post: Post; w: number; h: number; className?: string }) {
   const alwaysShow = post.kind === "live" || post.locked;
   return (
-    <a href="#" className={`group relative block overflow-hidden rounded-[20px] ${className}`}>
-      <Photo k={post.image} w={w} h={h} className="size-full transition-transform duration-300 group-hover:scale-[1.03]" />
+    <Link href={post.kind === "live" ? "/live/tibere" : `/post/${post.id}`} className={`group relative block overflow-hidden rounded-[20px] bg-[#1b1b22] ${className}`}>
+      {post.media?.length ? (
+        post.kind === "video" ? (
+          <video src={`${post.media[0]}#t=0.1`} muted playsInline preload="metadata" className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+        ) : (
+          <img src={post.media[0]} alt="" loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+        )
+      ) : (
+        <Photo k={post.image} w={w} h={h} className="size-full transition-transform duration-300 group-hover:scale-[1.03]" />
+      )}
+      {post.kind === "video" && !post.locked && <Play className="absolute right-4 top-4 size-5 fill-white text-white drop-shadow" aria-label="Video" />}
       {post.kind === "album" && <Layers className="absolute right-4 top-4 size-5 text-white drop-shadow" aria-label="Album" />}
       {post.locked && (
         <span className="absolute left-0 top-0 size-[100px] bg-gradient-to-br from-[#5b5b66]/90 from-50% to-transparent to-50%">
@@ -45,6 +55,6 @@ export function PostTile({ post, w, h, className = "" }: { post: Post; w: number
       >
         <Stats post={post} />
       </span>
-    </a>
+    </Link>
   );
 }

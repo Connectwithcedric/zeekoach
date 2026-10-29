@@ -3,7 +3,7 @@ import { CalendarClock, Ellipsis, Globe, Pencil, Star } from "lucide-react";
 import { FacebookIcon, InstagramIcon, LinkedinIcon, TiktokIcon, TwitterIcon } from "@/components/brand-icons";
 import { ClassCard } from "@/components/class-card";
 import { FollowToggle } from "@/components/follow-toggle";
-import { ProfileTabs } from "@/components/profile-tabs";
+import { ProfileContent } from "@/components/profile-tabs";
 import { Avatar, Card, Fab, FollowSuggestions, OutlineButton, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { roleLabel, type Person, type Session } from "@/lib/data";
 
@@ -88,8 +88,12 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
         }
         center={
           <>
-            <ProfileTabs />
-            {theirSessions.length ? (
+            <ProfileContent
+              personId={person.id}
+              real={!!person.real}
+              isOwner={isOwner}
+              sessionsPanel={
+                theirSessions.length ? (
               <div className="grid gap-[30px] sm:grid-cols-2">
                 {theirSessions.map((s) => (
                   <ClassCard key={s.id} session={s} />
@@ -102,7 +106,9 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
                   {isOwner ? "Add your first session with the + button." : `${person.name.split(" ")[0]} hasn't added any sessions yet.`}
                 </p>
               </Card>
-            )}
+            )
+              }
+            />
           </>
         }
         right={
