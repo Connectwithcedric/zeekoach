@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { Card, CardHeader, FollowerStack, PersonRow } from "@/components/ui";
-import { currentUserId, getPerson, people, type Person } from "@/lib/data";
+import { currentUserId, getPerson, people, showSamples, type Person } from "@/lib/data";
 import { registerProfile } from "@/lib/live-data";
 import { supabase, type Profile } from "@/lib/supabase";
 
@@ -27,7 +27,7 @@ function useSuggestions(count: number, koachesOnly: boolean) {
       alive = false;
     };
   }, [user, count, koachesOnly]);
-  const demo = people.filter((p) => !p.real && p.id !== currentUserId && (!koachesOnly || p.role !== "member"));
+  const demo = people.filter((p) => showSamples && !p.real && p.id !== currentUserId && (!koachesOnly || p.role !== "member"));
   return [...real, ...demo].slice(0, count);
 }
 

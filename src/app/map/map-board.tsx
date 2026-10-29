@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { BadgeCheck, CalendarClock, MessageCircle, Navigation, Search, SlidersHorizontal, Star } from "lucide-react";
 import { Photo } from "@/components/ui";
-import { formatPrice, locations, sessions } from "@/lib/data";
+import { formatPrice, locations, sessions, withSamples } from "@/lib/data";
 import { distanceKm, useMyPosition } from "@/lib/geo";
 import { useLiveSessions } from "@/lib/live-data";
 
@@ -24,7 +24,7 @@ export function MapBoard() {
 
   // Real sessions' places are added to the same list as they load; ones without coordinates stay off the map.
   const km = (l: (typeof locations)[number]) => (me ? distanceKm(me, l) : null);
-  const shown = locations
+  const shown = withSamples(locations)
     .filter((l) => l.lat !== 0 && l.name.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => (me ? km(a)! - km(b)! : Number(!!b.real) - Number(!!a.real)));
   const nearest = shown[0]?.id;

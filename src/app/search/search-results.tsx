@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { PostTile } from "@/components/post-tile";
 import { Avatar, Card } from "@/components/ui";
-import { formatPrice, getPerson, people, roleLabel, sessions as demoSessions, type Person, type Post, type Session } from "@/lib/data";
+import { formatPrice, getPerson, people, roleLabel, sessions as demoSessions, showSamples, type Person, type Post, type Session } from "@/lib/data";
 import { registerProfile, registerSessionRow, type SessionRow } from "@/lib/live-data";
 import { postSelect, toPost, type PostRow } from "@/lib/posts";
 import { supabase, type Profile } from "@/lib/supabase";
@@ -24,8 +24,8 @@ export function SearchResults() {
     const term = clean(q);
     const lower = term.toLowerCase();
     const demo = {
-      people: people.filter((p) => !p.real && p.name.toLowerCase().includes(lower)),
-      sessions: demoSessions.filter((s) => !s.real && s.title.toLowerCase().includes(lower)),
+      people: people.filter((p) => showSamples && !p.real && p.name.toLowerCase().includes(lower)),
+      sessions: demoSessions.filter((s) => showSamples && !s.real && s.title.toLowerCase().includes(lower)),
     };
     if (!term) return;
     let alive = true;

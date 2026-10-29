@@ -9,7 +9,7 @@ import { Banknote, Copy, CreditCard, Forward, Landmark, Search, WalletCards } fr
 import { DualRange, Toggle } from "@/components/controls";
 import { PillTabs } from "@/components/tabs-bar";
 import { Avatar, Card, Fab, OutlineButton, RightRailFooter, ThreeColumns } from "@/components/ui";
-import { getPerson, type Person } from "@/lib/data";
+import { getPerson, showSamples, type Person } from "@/lib/data";
 
 type Tx = { id: string; who: string; text: string; when: string; daysAgo: number; amount: number; channel: "digital" | "cash" };
 
@@ -73,7 +73,7 @@ function useRealWallet() {
   return data;
 }
 
-const demoBalance = 2966;
+const demoBalance = showSamples ? 2966 : 0;
 const frames = ["Always", "This Month", "Last Month", "Custom"] as const;
 
 export function WalletBoard() {
@@ -87,7 +87,7 @@ export function WalletBoard() {
   const real = useRealWallet();
   const balance = real?.balance ?? demoBalance;
 
-  const visible = (real?.txs ?? transactions).filter((t) => {
+  const visible = (real?.txs ?? (showSamples ? transactions : [])).filter((t) => {
     const abs = Math.abs(t.amount);
     if (t.channel !== channel) return false;
     if (query && !t.text.toLowerCase().includes(query.toLowerCase())) return false;
