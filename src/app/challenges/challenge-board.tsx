@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { FollowSuggestions } from "@/components/suggestions";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Award, CheckCheck, Compass, Eye, Flag, MessageSquare, Search, SendHorizontal, ThumbsUp, Upload, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { PillTabs } from "@/components/tabs-bar";
-import { Avatar, Card, FollowSuggestions, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
+import { Avatar, Card, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { currentUserId, getPerson, people, type Person, type PhotoKey } from "@/lib/data";
 import { registerProfile } from "@/lib/live-data";
 import { supabase, type Profile } from "@/lib/supabase";

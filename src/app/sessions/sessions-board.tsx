@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FollowSuggestions } from "@/components/suggestions";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Check, Search } from "lucide-react";
@@ -8,7 +9,7 @@ import { DualRange, SingleRange, Toggle } from "@/components/controls";
 import { Modal } from "@/components/modal";
 import { SessionDetail } from "@/components/session-detail";
 import { ExploreFollowing } from "@/components/tabs-bar";
-import { Avatar, Card, CardHeader, Fab, OutlineButton, FollowerStack, FollowSuggestions, PersonRow, RightRailFooter, ThreeColumns } from "@/components/ui";
+import { Avatar, Card, CardHeader, Fab, OutlineButton, FollowerStack, PersonRow, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { useAuth } from "@/components/auth-provider";
 import { useLiveSessions, useMyBookingIds } from "@/lib/live-data";
 import { useToday } from "@/lib/use-today";

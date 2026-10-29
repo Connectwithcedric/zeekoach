@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
 import { FollowToggle } from "@/components/follow-toggle";
 import { AppleIcon, FacebookIcon, InstagramIcon, LinkedinIcon, PlayIcon, TwitterIcon, YoutubeIcon } from "@/components/brand-icons";
-import { currentUserId, people, photo, type Person, type PhotoKey } from "@/lib/data";
+import { people, photo, type Person, type PhotoKey } from "@/lib/data";
 
 export function Card({ className = "", children }: { className?: string; children: React.ReactNode }) {
   return <section className={`rounded-card bg-surface ${className}`}>{children}</section>;
@@ -87,20 +87,6 @@ export function PersonRow({ person, sub, live = false }: { person: Person; sub: 
       </div>
       <FollowToggle personId={person.id} />
     </li>
-  );
-}
-
-export function FollowSuggestions() {
-  const list = people.filter((p) => p.id !== currentUserId).slice(0, 5);
-  return (
-    <Card className="pb-[15px]">
-      <CardHeader title="Follow Suggestions" />
-      <ul className="mt-[13px] space-y-[5px] px-[15px]">
-        {list.map((p) => (
-          <PersonRow key={p.id} person={p} sub={<FollowerStack />} />
-        ))}
-      </ul>
-    </Card>
   );
 }
 

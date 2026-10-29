@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FollowSuggestions } from "@/components/suggestions";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogOut, MapPin, Pencil } from "lucide-react";
@@ -8,7 +9,7 @@ import { AuthCard } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
 import { followCounts } from "@/components/follow-toggle";
 import { ProfileAvatar } from "@/components/profile-avatar";
-import { Card, FollowSuggestions, RightRailFooter, ThreeColumns } from "@/components/ui";
+import { Card, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { roleLabel } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import { MySessions } from "./my-sessions";

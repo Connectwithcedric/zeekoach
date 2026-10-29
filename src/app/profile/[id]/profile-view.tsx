@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { FollowSuggestions } from "@/components/suggestions";
 import { CalendarClock, Ellipsis, Globe, Pencil, Star } from "lucide-react";
 import { FacebookIcon, InstagramIcon, LinkedinIcon, TiktokIcon, TwitterIcon } from "@/components/brand-icons";
 import { ClassCard } from "@/components/class-card";
 import { FollowToggle } from "@/components/follow-toggle";
 import { ProfileContent } from "@/components/profile-tabs";
-import { Avatar, Card, Fab, FollowSuggestions, OutlineButton, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
+import { Avatar, Card, Fab, OutlineButton, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { roleLabel, type Person, type Session } from "@/lib/data";
 
 const socials = [Globe, LinkedinIcon, InstagramIcon, FacebookIcon, TwitterIcon, TiktokIcon];
