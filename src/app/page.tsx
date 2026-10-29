@@ -16,7 +16,7 @@ export default function HomePage() {
           <>
             <OutlineButton>Upgrade to ProKoach!</OutlineButton>
             <Card className="pb-[15px]">
-              <CardHeader title={`${nearby.length + 6} Koaches near by`} />
+              <CardHeader title={`${nearby.length + 6} Koaches near by`} href="/map" />
               <ul className="mt-[13px] space-y-[5px] px-[15px]">
                 {nearby.map((p) => (
                   <PersonRow key={p.id} person={p} sub={`${p.distanceKm}km`} />
@@ -24,11 +24,9 @@ export default function HomePage() {
               </ul>
             </Card>
             <Card className="pb-[15px]">
-              <div className="px-[25px] pt-[21px]">
-                <h2 className="text-[15px] font-bold">Popular Locations</h2>
-              </div>
+              <CardHeader title="Popular Locations" href="/map" />
               <ul className="mt-[13px] space-y-[5px] px-[10px]">
-                {locations.map((l, i) => (
+                {locations.slice(0, 3).map((l, i) => (
                   <li key={l.id} className={`flex items-center gap-[15px] rounded-[14px] px-[15px] py-[10px] ${i === 0 ? "bg-bg" : ""}`}>
                     <Photo k="gymInterior" w={40} h={40} className="size-10 rounded-[10px]" />
                     <div className="min-w-0 flex-1">

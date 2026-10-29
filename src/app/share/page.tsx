@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/coming-soon";
+import { ShareBoard } from "./share-board";
 
 export const metadata: Metadata = { title: "Share & Earn" };
 
 export default function SharePage() {
-  return <ComingSoon title="Share & Earn" />;
+  return <ShareBoard />;
 }

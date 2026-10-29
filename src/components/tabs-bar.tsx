@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCheck, Compass } from "lucide-react";
+import { CheckCheck, Compass, type LucideIcon } from "lucide-react";
 
-// The Explore / Following switch at the top of Home and Sessions.
-export function ExploreFollowing({ onChange }: { onChange?: (v: "explore" | "following") => void }) {
-  const [value, setValue] = useState<"explore" | "following">("explore");
-  const opts = [
-    { v: "explore" as const, label: "Explore", Icon: Compass },
-    { v: "following" as const, label: "Following", Icon: CheckCheck },
-  ];
+type Option<T extends string> = { v: T; label: string; Icon: LucideIcon };
+
+// The white bar of pill tabs used at the top of the center column on most Figma screens.
+export function PillTabs<T extends string>({ options, onChange, className = "px-[116px]" }: { options: Option<T>[]; onChange?: (v: T) => void; className?: string }) {
+  const [value, setValue] = useState<T>(options[0].v);
+  const opts = options;
   return (
-    <div className="flex h-[70px] items-center justify-around rounded-card bg-surface px-[116px] max-sm:px-4" role="tablist">
+    <div className={`flex h-[70px] items-center justify-around rounded-card bg-surface max-sm:px-4 ${className}`} role="tablist">
       {opts.map(({ v, label, Icon }) => {
         const active = v === value;
         return (
@@ -32,5 +31,18 @@ export function ExploreFollowing({ onChange }: { onChange?: (v: "explore" | "fol
         );
       })}
     </div>
+  );
+}
+
+// The Explore / Following switch at the top of Home and Sessions.
+export function ExploreFollowing({ onChange }: { onChange?: (v: "explore" | "following") => void }) {
+  return (
+    <PillTabs
+      options={[
+        { v: "explore", label: "Explore", Icon: Compass },
+        { v: "following", label: "Following", Icon: CheckCheck },
+      ]}
+      onChange={onChange}
+    />
   );
 }
