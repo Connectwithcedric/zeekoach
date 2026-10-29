@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Award, Bell, CalendarClock, Forward, Home, MessageCircle, Search, Settings, Wallet } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { currentUserId, getPerson, photo } from "@/lib/data";
+import { supabase } from "@/lib/supabase";
 
 const items = [
   { href: "/", label: "Home", icon: Home },
@@ -17,6 +20,7 @@ const items = [
 export function TopNav() {
   const pathname = usePathname();
   const me = getPerson(currentUserId)!;
+  const { ready, profile } = useAuth();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
@@ -55,15 +59,26 @@ export function TopNav() {
       </nav>
 
       <div className="ml-auto flex items-center gap-6 lg:ml-0 lg:border-l lg:border-line lg:pl-10">
-        <Link href={`/profile/${me.id}`} aria-label="Your profile">
-          <img src={photo(me.photo, 30, 30, true)} alt="" className="size-[30px] rounded-[8px] object-cover" />
-        </Link>
+        {/* Without the Supabase integration (e.g. locally) the demo profile stays in place. */}
+        {!supabase ? (
+          <Link href={`/profile/${me.id}`} aria-label="Your profile">
+            <img src={photo(me.photo, 30, 30, true)} alt="" className="size-[30px] rounded-[8px] object-cover" />
+          </Link>
+        ) : profile ? (
+          <Link href="/me" aria-label="Your profile">
+            <ProfileAvatar profile={profile} size={30} />
+          </Link>
+        ) : (
+          <Link href="/login" className={`flex h-9 items-center rounded-[10px] bg-primary px-4 text-[13px] font-bold text-white ${ready ? "" : "invisible"}`}>
+            Log in
+          </Link>
+        )}
         <button aria-label="Notifications" className="text-[#7c7c8a] hover:text-primary">
           <Bell className="size-[19px]" strokeWidth={1.8} />
         </button>
-        <button aria-label="Settings" className="hidden text-[#7c7c8a] hover:text-primary sm:block">
+        <Link href="/settings/profile" aria-label="Settings" className="hidden text-[#7c7c8a] hover:text-primary sm:block">
           <Settings className="size-[19px]" strokeWidth={1.8} />
-        </button>
+        </Link>
       </div>
     </header>
   );
