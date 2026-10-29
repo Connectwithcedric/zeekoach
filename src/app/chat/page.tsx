@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
-import { ChatBoard } from "./chat-board";
+import { Suspense } from "react";
+import { ChatRouter } from "./chat-router";
 
 export const metadata: Metadata = { title: "Chat" };
 
 export default function ChatPage() {
-  return <ChatBoard />;
+  return (
+    <Suspense>
+      <ChatRouter />
+    </Suspense>
+  );
 }

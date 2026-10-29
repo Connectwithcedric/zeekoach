@@ -55,7 +55,7 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
                 ) : (
                   <>
                     <FollowToggle personId={person.id} variant="button" onChange={onFollow} />
-                    <Link href="/chat" className="flex h-[38px] items-center justify-center rounded-[10px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft">
+                    <Link href={person.real ? `/chat?with=${person.id}` : "/chat"} className="flex h-[38px] items-center justify-center rounded-[10px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft">
                       Message
                     </Link>
                   </>
