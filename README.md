@@ -1,6 +1,6 @@
-# ZeeKOACH
+# ZeeKoach
 
-Web app for ZeeKOACH, a social platform where people find a Koach near them, book sessions and train together. The layout, icons and colors follow the YouKoach Figma design (now renamed ZeeKOACH): a 1440px frame with three columns (330 | 640 | 330).
+Web app for ZeeKoach, a social platform where people find a Koach near them, book sessions and train together. The layout, icons and colors follow the YouKoach Figma design (now renamed ZeeKoach): a 1440px frame with three columns (330 | 640 | 330).
 
 ## Screens
 

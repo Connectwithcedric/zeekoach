@@ -22,7 +22,7 @@ export function TopNav() {
   return (
     <header className="flex h-16 items-center rounded-card bg-surface px-4 lg:h-20 lg:px-6">
       <Link href="/" className="shrink-0 text-[17px] font-extrabold tracking-tight text-primary">
-        ZeeKOACH
+        ZeeKoach
       </Link>
 
       <label className="ml-7 hidden h-10 w-[191px] items-center gap-2 rounded-[10px] bg-bg px-3 text-sm text-muted md:flex">
