@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Award, Bell, CalendarClock, Forward, Home, MessageCircle, Search, Settings, Wallet } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Award, CalendarClock, Forward, Home, MessageCircle, Search, Settings, Wallet } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { NotificationBell } from "@/components/notification-bell";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { currentUserId, getPerson, photo } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
@@ -19,6 +20,7 @@ const items = [
 
 export function TopNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const me = getPerson(currentUserId)!;
   const { ready, profile } = useAuth();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
@@ -29,10 +31,18 @@ export function TopNav() {
         ZeeKoach
       </Link>
 
-      <label className="ml-7 hidden h-10 w-[191px] items-center gap-2 rounded-[10px] bg-bg px-3 text-sm text-muted md:flex">
+      <form
+        action="/search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = new FormData(e.currentTarget).get("q")?.toString().trim();
+          if (q) router.push(`/search?q=${encodeURIComponent(q)}`);
+        }}
+        className="ml-7 hidden h-10 w-[191px] items-center gap-2 rounded-[10px] bg-bg px-3 text-sm text-muted md:flex"
+      >
         <Search className="size-3.5" aria-hidden />
-        <input className="w-full bg-transparent outline-none placeholder:text-muted" placeholder="Search" aria-label="Search" />
-      </label>
+        <input name="q" className="w-full bg-transparent outline-none placeholder:text-muted" placeholder="Search" aria-label="Search" />
+      </form>
 
       {/* Icon tabs, as in the Figma. On phones they move to a bottom bar. */}
       <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface lg:static lg:flex-1 lg:border-0">
@@ -73,9 +83,10 @@ export function TopNav() {
             Log in
           </Link>
         )}
-        <button aria-label="Notifications" className="text-[#7c7c8a] hover:text-primary">
-          <Bell className="size-[19px]" strokeWidth={1.8} />
-        </button>
+        <Link href="/search" aria-label="Search" className="text-[#7c7c8a] hover:text-primary md:hidden">
+          <Search className="size-[19px]" strokeWidth={1.8} />
+        </Link>
+        <NotificationBell />
         <Link href="/settings/profile" aria-label="Settings" className="hidden text-[#7c7c8a] hover:text-primary sm:block">
           <Settings className="size-[19px]" strokeWidth={1.8} />
         </Link>

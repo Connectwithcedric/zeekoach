@@ -1,25 +1,17 @@
+import { FollowSuggestions, KoachesNearBy } from "@/components/suggestions";
 import { FollowToggle } from "@/components/follow-toggle";
-import { Card, CardHeader, Fab, FollowSuggestions, OutlineButton, PersonRow, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
-import { currentUserId, locations, people } from "@/lib/data";
+import { Card, CardHeader, Fab, OutlineButton, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
+import { locations } from "@/lib/data";
 import { HomeFeed } from "./home-feed";
 
 export default function HomePage() {
-  const nearby = people.filter((p) => p.id !== currentUserId && p.role !== "member").slice(0, 7);
-
   return (
     <>
       <ThreeColumns
         left={
           <>
             <OutlineButton>Upgrade to ProKoach!</OutlineButton>
-            <Card className="pb-[15px]">
-              <CardHeader title={`${nearby.length + 6} Koaches near by`} href="/map" />
-              <ul className="mt-[13px] space-y-[5px] px-[15px]">
-                {nearby.map((p) => (
-                  <PersonRow key={p.id} person={p} sub={`${p.distanceKm}km`} />
-                ))}
-              </ul>
-            </Card>
+            <KoachesNearBy />
             <Card className="pb-[15px]">
               <CardHeader title="Popular Locations" href="/map" />
               <ul className="mt-[13px] space-y-[5px] px-[10px]">
