@@ -13,6 +13,7 @@ import { Avatar, Card, CardHeader, Fab, OutlineButton, FollowerStack, PersonRow,
 import { useAuth } from "@/components/auth-provider";
 import { useLiveSessions, useMyBookingIds } from "@/lib/live-data";
 import { useToday } from "@/lib/use-today";
+import { useLiveStreams } from "@/lib/streams";
 import { currentUserId, formatPrice, formatTime, getPerson, people, sameDay, sessionDate, sessions, withSamples, type Session } from "@/lib/data";
 
 const minutes = (t: string) => {
@@ -182,7 +183,9 @@ export function SessionsBoard({ bookedIds: demoBooked = [] }: { bookedIds?: stri
     })
     .sort((a, b) => a.start.localeCompare(b.start));
 
-  const live = withSamples(people).filter((p) => p.streaming).slice(0, 7);
+  const streams = useLiveStreams();
+  const live = withSamples(people).filter((p) => p.streaming).slice(0, Math.max(0, 7 - streams.length));
+  const firstLive = streams[0] ? `/live/${streams[0].id}` : live[0] ? `/live/${live[0].id}` : undefined;
 
   return (
     <>
@@ -190,6 +193,7 @@ export function SessionsBoard({ bookedIds: demoBooked = [] }: { bookedIds?: stri
         left={
           <>
             {canCreate && <OutlineButton href="/sessions/new">+ Create a session</OutlineButton>}
+            {user && <OutlineButton href="/live/new">Go live</OutlineButton>}
             <FiltersPanel f={f} set={set} />
           </>
         }
@@ -252,8 +256,13 @@ export function SessionsBoard({ bookedIds: demoBooked = [] }: { bookedIds?: stri
         right={
           <>
             <Card className="pb-[15px]">
-              <CardHeader title="Streaming now" href={`/live/${live[0]?.id}`} />
+              <CardHeader title="Streaming now" href={firstLive} />
               <ul className="mt-[13px] space-y-[5px] px-[15px]">
+                {streams.map((s) => {
+                  const host = getPerson(s.host_id);
+                  return host && <PersonRow key={s.id} person={host} live sub={<Link href={`/live/${s.id}`} className="hover:text-primary">{s.title || "Live now"}</Link>} />;
+                })}
+                {!streams.length && !live.length && <li className="px-[10px] py-[10px] text-[13px] font-semibold text-muted">Nobody is live right now.</li>}
                 {live.map((p) => (
                   <PersonRow key={p.id} person={p} live sub={<Link href={`/live/${p.id}`} className="hover:text-primary">{p.streaming}</Link>} />
                 ))}
