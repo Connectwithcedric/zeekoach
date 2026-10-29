@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FollowSuggestions } from "@/components/suggestions";
-import { CalendarClock, Ellipsis, Globe, Pencil, Star } from "lucide-react";
+import { CalendarClock, Ellipsis, Globe, Pencil, Radio, Star } from "lucide-react";
 import { FacebookIcon, InstagramIcon, LinkedinIcon, TiktokIcon, TwitterIcon } from "@/components/brand-icons";
 import { ClassCard } from "@/components/class-card";
 import { FollowToggle } from "@/components/follow-toggle";
@@ -49,8 +49,8 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
                     <Link href={person.real ? "/settings/profile" : "#"} className="flex h-[38px] items-center justify-center gap-2 rounded-[10px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft">
                       <Pencil className="size-3.5" aria-hidden /> Edit
                     </Link>
-                    <Link href="/sessions" className="flex h-[38px] items-center justify-center gap-2 rounded-[10px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft">
-                      <CalendarClock className="size-3.5" aria-hidden /> Sessions
+                    <Link href={person.real ? "/live/new" : "/sessions"} className="flex h-[38px] items-center justify-center gap-2 rounded-[10px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft">
+                      {person.real ? <><Radio className="size-3.5" aria-hidden /> Go live</> : <><CalendarClock className="size-3.5" aria-hidden /> Sessions</>}
                     </Link>
                   </>
                 ) : (
