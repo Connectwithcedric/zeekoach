@@ -6,6 +6,8 @@ import { useState } from "react";
 import { BadgeCheck, CalendarClock, MessageCircle, Navigation, Search, SlidersHorizontal, Star } from "lucide-react";
 import { Photo } from "@/components/ui";
 import { formatPrice, locations, sessions } from "@/lib/data";
+import { distanceKm, useMyPosition } from "@/lib/geo";
+import { useLiveSessions } from "@/lib/live-data";
 
 // Leaflet touches `window`, so the map only renders in the browser.
 const LeafletMap = dynamic(() => import("./leaflet-map"), { ssr: false, loading: () => <div className="size-full animate-pulse bg-[#e9e9f1]" /> });
@@ -14,13 +16,24 @@ const actions = ["Enroll", "Buy", "Visit"] as const;
 
 export function MapBoard() {
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(locations[0].id);
+  const [picked, setSelected] = useState<string | null>(null);
   const [indoorOnly, setIndoorOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  useLiveSessions();
+  const me = useMyPosition(true);
 
-  const shown = locations.filter((l) => l.name.toLowerCase().includes(query.toLowerCase()));
+  // Real sessions' places are added to the same list as they load; ones without coordinates stay off the map.
+  const km = (l: (typeof locations)[number]) => (me ? distanceKm(me, l) : null);
+  const shown = locations
+    .filter((l) => l.lat !== 0 && l.name.toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => (me ? km(a)! - km(b)! : Number(!!b.real) - Number(!!a.real)));
+  const nearest = shown[0]?.id;
+
+  // Until you pick a place, the closest one (or the first) is selected.
+  const selected = picked ?? nearest ?? "";
+
   const prices = sessions
-    .filter((s) => s.format === "in-person" && (!indoorOnly || s.indoor))
+    .filter((s) => s.format === "in-person" && (!indoorOnly || s.indoor) && locations.some((l) => l.id === s.locationId && l.lat !== 0))
     .map((s) => ({ id: s.id, label: formatPrice(s.price), loc: locations.find((l) => l.id === s.locationId)! }));
 
   return (
@@ -53,8 +66,10 @@ export function MapBoard() {
 
       <ul className="flex gap-[15px] overflow-x-auto bg-bg p-[15px]">
         {shown.map((l, i) => {
-          const action = actions[i % actions.length];
+          const action = l.real ? "Book" : actions[i % actions.length];
           const active = l.id === selected;
+          const next = sessions.find((s) => s.real && s.locationId === l.id);
+          const distance = km(l);
           return (
             <li key={l.id}>
               <div
@@ -82,18 +97,22 @@ export function MapBoard() {
                   {l.verified && <BadgeCheck className="size-4 shrink-0 fill-[#3d8bff] text-white" aria-label="Verified" />}
                 </p>
                 <p className="mt-1.5 flex items-center gap-4 text-xs font-bold">
-                  <span className="flex items-center gap-1"><Star className="size-3.5 fill-yellow text-yellow" /> {l.rating} <span className="font-semibold text-muted">({l.reviews})</span></span>
-                  <span>{(1.2 + i * 0.6).toFixed(1)}km</span>
+                  {l.reviews > 0 ? (
+                    <span className="flex items-center gap-1"><Star className="size-3.5 fill-yellow text-yellow" /> {l.rating} <span className="font-semibold text-muted">({l.reviews})</span></span>
+                  ) : (
+                    <span className="font-semibold text-muted">New</span>
+                  )}
+                  {distance != null ? <span>{distance < 10 ? distance.toFixed(1) : Math.round(distance)}km</span> : !l.real && <span>{(1.2 + i * 0.6).toFixed(1)}km</span>}
                 </p>
                 <div className="mt-3 flex items-center gap-2">
                   <Link
-                    href="/sessions"
+                    href={next ? `/sessions/${next.id}` : "/sessions"}
                     className={`flex h-9 flex-1 items-center justify-center rounded-[10px] text-xs font-bold ${action === "Visit" ? "bg-bg text-primary" : "bg-primary text-white"}`}
                   >
                     {action}
                   </Link>
                   <Link href="/sessions" aria-label="Sessions here" className="flex size-9 items-center justify-center rounded-[10px] bg-bg text-primary"><CalendarClock className="size-4" /></Link>
-                  <Link href="/chat" aria-label="Message" className="flex size-9 items-center justify-center rounded-[10px] bg-bg text-primary"><MessageCircle className="size-4" /></Link>
+                  <Link href={next ? `/chat?with=${next.koachId}` : "/chat"} aria-label="Message" className="flex size-9 items-center justify-center rounded-[10px] bg-bg text-primary"><MessageCircle className="size-4" /></Link>
                 </div>
               </div>
             </li>

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthCard, Field, FormMessage, NotConfigured, SubmitButton } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
+import { geocode } from "@/lib/geo";
 import { reloadSessions, type SessionRow } from "@/lib/live-data";
 import { supabase } from "@/lib/supabase";
 
@@ -145,6 +146,8 @@ export function SessionForm() {
     if (ends <= starts) return setMsg("The session has to end after it starts.");
     setBusy(true);
     setMsg(null);
+    const inPerson = v.format === "in-person";
+    const where = inPerson ? (await geocode([v.address, v.location_name].filter(Boolean).join(", "))) ?? (await geocode(v.location_name)) : null;
     const row = {
       koach_id: user.id,
       title: v.title.trim(),
@@ -162,6 +165,8 @@ export function SessionForm() {
       location_name: v.format === "stream" ? "Online" : v.location_name.trim(),
       address: v.format === "stream" ? "" : v.address.trim(),
       meet_up: v.format === "stream" ? "" : v.meet_up.trim(),
+      lat: where?.lat ?? null,
+      lng: where?.lng ?? null,
     };
     const { error } = editId ? await supabase.from("sessions").update(row).eq("id", editId) : await supabase.from("sessions").insert(row);
     setBusy(false);
