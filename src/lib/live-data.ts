@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { registerLocation, registerPerson, registerSession, type PhotoKey, type Session } from "@/lib/data";
+import { getLocation, registerLocation, registerPerson, registerSession, type PhotoKey, type Session } from "@/lib/data";
 import { supabase, type Profile } from "@/lib/supabase";
 
 export type SessionRow = {
@@ -38,6 +38,7 @@ export function registerProfile(p: Profile) {
     role: p.role,
     photo: "coach",
     avatarUrl: p.avatar_url,
+    verified: p.role === "prokoach",
     real: true,
     distanceKm: 0,
     rating: 0,
@@ -55,7 +56,8 @@ export function registerSessionRow(r: SessionRow): Session {
   const start = new Date(r.starts_at);
   // Sessions at the same place share one map pin.
   const locationId = r.lat != null && r.lng != null ? `loc-${r.lat.toFixed(4)},${r.lng.toFixed(4)}` : `loc-${r.id}`;
-  registerLocation({
+  // A listed place keeps its own name and photo; sessions there just join it.
+  if (!getLocation(locationId)?.listed) registerLocation({
     id: locationId,
     name: r.location_name || (r.format === "stream" ? "Online" : "Location to be confirmed"),
     followers: 0,
@@ -96,12 +98,43 @@ export function registerSessionRow(r: SessionRow): Session {
 
 const select = "*, koach:profiles!sessions_koach_id_fkey(*)";
 
+export type PlaceRow = { id: string; owner_id: string; name: string; address: string; description: string; indoor: boolean; photo: string | null; lat: number | null; lng: number | null };
+
+// Same id scheme as session places, so sessions at a listed place share its pin.
+export const placeLocationId = (p: { id: string; lat: number | null; lng: number | null }) => (p.lat != null && p.lng != null ? `loc-${p.lat.toFixed(4)},${p.lng.toFixed(4)}` : `place-${p.id}`);
+
+export function registerPlace(p: PlaceRow) {
+  registerLocation({
+    id: placeLocationId(p),
+    name: p.name,
+    followers: 0,
+    address: p.address,
+    meetUp: "",
+    lat: p.lat ?? 0,
+    lng: p.lng ?? 0,
+    rating: 0,
+    reviews: 0,
+    real: true,
+    listed: true,
+    photo: p.photo,
+    ownerId: p.owner_id,
+    description: p.description,
+    indoor: p.indoor,
+  });
+}
+
+async function loadPlaces() {
+  const { data } = await supabase!.from("places").select("*").order("created_at", { ascending: false }).limit(200);
+  (data as PlaceRow[] | null)?.forEach(registerPlace);
+}
+
 let pending: Promise<void> | null = null;
 function loadUpcoming() {
   if (!supabase) return Promise.resolve();
   pending ??= (async () => {
     const since = new Date(Date.now() - 86_400_000).toISOString();
     const { data } = await supabase!.from("sessions").select(select).gte("ends_at", since).order("starts_at").limit(200);
+    await loadPlaces();
     (data as SessionRow[] | null)?.forEach(registerSessionRow);
   })();
   return pending;

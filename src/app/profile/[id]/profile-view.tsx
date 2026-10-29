@@ -19,7 +19,7 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
       <ThreeColumns
         left={
           <>
-            <OutlineButton>Upgrade to ProKoach!</OutlineButton>
+            <OutlineButton href="/upgrade">Upgrade to ProKoach!</OutlineButton>
             <Card className="relative px-[25px] pb-[25px] pt-[26px]">
               <button aria-label="Profile options" className="absolute right-[25px] top-[14px] text-primary">
                 <Ellipsis className="size-5" />
@@ -114,7 +114,7 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
         }
         right={
           <>
-            <OutlineButton>List your Location</OutlineButton>
+            <OutlineButton href="/locations/new">List your Location</OutlineButton>
             <FollowSuggestions />
             <RightRailFooter />
           </>

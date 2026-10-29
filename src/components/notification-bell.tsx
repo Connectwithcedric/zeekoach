@@ -100,7 +100,7 @@ export function NotificationBell() {
                     <Link href={n.target || "/"} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 hover:bg-bg">
                       {actor && <Avatar person={actor} size={36} />}
                       <span className="min-w-0 flex-1 text-[13px] leading-snug">
-                        <b>{actor?.name ?? "Someone"}</b> {n.text}
+                        <b>{n.actor_id ? (actor?.name ?? "Someone") : "ZeeKoach"}</b> {n.text}
                         <span className="block text-[11px] font-semibold text-muted">{ago(n.created_at)}</span>
                       </span>
                     </Link>
