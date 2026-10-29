@@ -1,26 +1,36 @@
 @import "tailwindcss";
 
+/* ZeeKOACH design tokens, taken from the Figma screens. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --zk-bg: #f4f3fd;
+  --zk-surface: #ffffff;
+  --zk-surface-muted: #f1effd;
+  --zk-primary: #6c4df6;
+  --zk-primary-strong: #5435e0;
+  --zk-accent: #f5b400;
+  --zk-accent-text: #8a6300; /* yellow that passes contrast on white */
+  --zk-text: #1c1b29;
+  --zk-muted: #5f5e74; /* darker than the Figma grey for 4.5:1 contrast */
+  --zk-border: #e6e3f7;
+  --zk-live: #e5243b;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-bg: var(--zk-bg);
+  --color-surface: var(--zk-surface);
+  --color-surface-muted: var(--zk-surface-muted);
+  --color-primary: var(--zk-primary);
+  --color-primary-strong: var(--zk-primary-strong);
+  --color-accent: var(--zk-accent);
+  --color-accent-text: var(--zk-accent-text);
+  --color-ink: var(--zk-text);
+  --color-muted: var(--zk-muted);
+  --color-line: var(--zk-border);
+  --color-live: var(--zk-live);
+  --font-sans: var(--font-jakarta);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--zk-bg);
+  color: var(--zk-text);
 }
