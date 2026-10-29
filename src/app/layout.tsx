@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { AuthProvider } from "@/components/auth-provider";
 import { TopNav } from "@/components/top-nav";
 import "./globals.css";
 
@@ -19,8 +20,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full font-sans">
         <div className="mx-auto w-full max-w-[1440px] px-4 pb-24 pt-4 sm:px-6 lg:pb-10 xl:px-10 xl:pt-[30px]">
-          <TopNav />
-          {children}
+          <AuthProvider>
+            <TopNav />
+            {children}
+          </AuthProvider>
         </div>
       </body>
     </html>
