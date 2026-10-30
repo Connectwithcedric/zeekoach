@@ -15,4 +15,7 @@ export type Profile = {
   bio: string;
   city: string;
   avatar_url: string | null;
+  sports?: string[];
+  hourly_rate?: number | null;
+  onboarded?: boolean;
 };

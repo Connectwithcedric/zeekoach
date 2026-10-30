@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Welcome } from "./welcome";
+import { Go } from "./go";
 
 export const metadata: Metadata = { title: "Join ZeeKoach" };
 
@@ -10,5 +10,5 @@ export function generateStaticParams() {
 // Referral links: zeekoach.vercel.app/r/<username>
 export default async function ReferralPage({ params }: PageProps<"/r/[code]">) {
   const { code } = await params;
-  return <Welcome code={code} />;
+  return <Go code={code} />;
 }
