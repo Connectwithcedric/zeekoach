@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { registerProfile } from "@/lib/live-data";
 import { supabase, type Profile } from "@/lib/supabase";
 
-export type Stream = { id: string; host_id: string; title: string; started_at: string; ended_at: string | null; seen_at: string; host: Profile | null };
+export type Stream = { id: string; host_id: string; title: string; started_at: string; ended_at: string | null; seen_at: string; session_id?: string | null; host: Profile | null };
 
 export const streamSelect = "*, host:profiles!streams_host_id_fkey(*)";
 

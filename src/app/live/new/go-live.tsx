@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AuthCard, FormMessage, NotConfigured, SubmitButton } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
@@ -11,7 +11,13 @@ import { supabase } from "@/lib/supabase";
 export function GoLive() {
   const router = useRouter();
   const { ready, user } = useAuth();
+  // From a stream session's page: /live/new?session=<id> streams that session to the people who booked it.
+  const sessionId = useSearchParams().get("session");
   const [title, setTitle] = useState("");
+  useEffect(() => {
+    if (!sessionId || !supabase) return;
+    supabase.from("sessions").select("title").eq("id", sessionId).maybeSingle().then(({ data }) => data && setTitle(data.title));
+  }, [sessionId]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [camOk, setCamOk] = useState<boolean | null>(null);
@@ -51,14 +57,14 @@ export function GoLive() {
     setBusy(true);
     setMsg(null);
     await supabase.from("streams").update({ ended_at: new Date().toISOString() }).eq("host_id", user.id).is("ended_at", null);
-    const { data, error } = await supabase.from("streams").insert({ host_id: user.id, title: title.trim() }).select("id").single();
+    const { data, error } = await supabase.from("streams").insert({ host_id: user.id, title: title.trim(), session_id: sessionId }).select("id").single();
     setBusy(false);
     if (error || !data) return setMsg(error?.message ?? "Couldn't start the stream.");
     router.push(`/live/${data.id}`);
   }
 
   return (
-    <AuthCard title="Go live" sub="Your followers get a notification when you start.">
+    <AuthCard title={sessionId ? "Start your stream session" : "Go live"} sub={sessionId ? "Everyone who booked gets a notification, and only they can watch." : "Your followers get a notification when you start."}>
       <form onSubmit={start} className="space-y-5">
         <div className="relative aspect-video overflow-hidden rounded-[12px] bg-black">
           <video ref={video} autoPlay muted playsInline className="size-full -scale-x-100 object-cover" />

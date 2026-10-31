@@ -24,6 +24,24 @@ export function SessionExtras({ session }: { session: Session }) {
   const [cancelled, setCancelled] = useState(!!session.cancelled);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [liveId, setLiveId] = useState<string | null>(null);
+
+  // A stream session that's live right now: the people who booked can join it here.
+  useEffect(() => {
+    if (!supabase || session.format !== "stream") return;
+    let alive = true;
+    supabase
+      .from("streams")
+      .select("id")
+      .eq("session_id", session.id)
+      .is("ended_at", null)
+      .gt("seen_at", new Date(Date.now() - 90_000).toISOString())
+      .limit(1)
+      .then(({ data }) => alive && setLiveId(data?.[0]?.id ?? null));
+    return () => {
+      alive = false;
+    };
+  }, [session.id, session.format]);
 
   useEffect(() => {
     if (!supabase || !session.seriesId) return;
@@ -64,6 +82,13 @@ export function SessionExtras({ session }: { session: Session }) {
     <div className="w-full max-w-[410px] space-y-[20px] lg:w-[320px]">
       {cancelled && <p className="rounded-[12px] bg-[#fdecee] px-4 py-3 text-[13px] font-bold text-live">This session was cancelled. Everyone who booked was refunded.</p>}
       {msg && !cancelled && <p className="rounded-[12px] bg-primary-soft px-4 py-3 text-[13px] font-semibold text-primary">{msg}</p>}
+      {!cancelled && session.format === "stream" && (liveId ? (
+        <Link href={`/live/${liveId}`} className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-live text-[13px] font-bold text-white">
+          <span className="size-2 animate-pulse rounded-full bg-white" /> {mine ? "Back to your stream" : "Join the live stream"}
+        </Link>
+      ) : mine ? (
+        <Link href={`/live/new?session=${session.id}`} className="flex h-11 w-full items-center justify-center rounded-[12px] bg-primary text-[13px] font-bold text-white">Start the stream</Link>
+      ) : null)}
       {!cancelled && <ShareToChat type="session" id={session.id} className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-surface text-[13px] font-bold text-primary hover:bg-primary-soft" />}
       {session.seriesId && (
         <Card className="px-[22px] py-[20px]">

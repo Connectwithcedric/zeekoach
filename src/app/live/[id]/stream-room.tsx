@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Eye, MessageCircle, Mic, MicOff, SendHorizontal, ThumbsUp, Video, VideoOff, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { TipButton } from "@/components/money-modal";
 import { Avatar } from "@/components/ui";
 import { getPerson, type Person } from "@/lib/data";
 import { fetchStream, isLive, type Stream } from "@/lib/streams";
@@ -53,7 +54,31 @@ export function StreamRoom({ id }: { id: string }) {
 
   if (stream === undefined) return <div className="mt-[30px] h-[560px] rounded-card bg-surface" />;
   if (!stream || !isLive(stream)) return <Ended host={stream ? getPerson(stream.host_id) : undefined} />;
+  if (stream.session_id) return <BookedOnly stream={stream} />;
   return <Room stream={stream} />;
+}
+
+// A session stream: only the Koach and the people who booked get in.
+function BookedOnly({ stream }: { stream: Stream }) {
+  const { ready, user } = useAuth();
+  const [ok, setOk] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!ready) return;
+    let alive = true;
+    supabase!.rpc("can_watch", { sid: stream.id }).then(({ data }) => alive && setOk(!!data));
+    return () => {
+      alive = false;
+    };
+  }, [ready, user, stream.id]);
+  if (ok === null) return <div className="mt-[30px] h-[560px] rounded-card bg-surface" />;
+  if (ok) return <Room stream={stream} />;
+  return (
+    <div className="mt-[30px] rounded-card bg-surface px-8 py-16 text-center">
+      <p className="text-[15px] font-bold">This stream is for people who booked the session</p>
+      <p className="mx-auto mt-1 max-w-[360px] text-[13px] font-semibold text-muted">{user ? "Book a spot to join it." : "Log in with the account you booked with."}</p>
+      <Link href={user ? `/sessions/${stream.session_id}` : "/login"} className="mt-5 inline-flex h-10 items-center rounded-[10px] bg-primary px-5 text-[13px] font-bold text-white">{user ? "See the session" : "Log in"}</Link>
+    </div>
+  );
 }
 
 function Ended({ host }: { host?: Person }) {
@@ -304,6 +329,7 @@ function Room({ stream }: { stream: Stream }) {
             <p className="text-[11px] font-semibold text-muted">with {host.name}</p>
           </div>
         </Link>
+        {!isHost && host.real && <TipButton to={host} className="flex h-10 items-center gap-1.5 rounded-[10px] bg-bg px-3 text-[13px] font-bold text-primary" />}
         {isHost && (
           <div className="mx-auto flex gap-3">
             <button onClick={() => toggle("audio", !mic)} aria-label={mic ? "Mute" : "Unmute"} className={`flex size-10 items-center justify-center rounded-[10px] ${mic ? "bg-primary text-white" : "bg-bg text-primary"}`}>{mic ? <Mic className="size-4" /> : <MicOff className="size-4" />}</button>
