@@ -5,7 +5,13 @@ import { createClient } from "@supabase/supabase-js";
 
 const dbUrl = process.env.POSTGRES_URL ?? process.env.POSTGRES_URL_NON_POOLING;
 // Supabase uses a certificate chain Node doesn't know; the connection is still encrypted.
-export const pool = dbUrl ? new pg.Pool({ connectionString: dbUrl.replace(/[?&]sslmode=[^&]*/, ""), ssl: { rejectUnauthorized: false }, max: 3 }) : null;
+// Dropping sslmode with a plain regex left "&supa=..." stuck to the database name, so parse the URL instead.
+function withoutSslMode(u: string) {
+  const parsed = new URL(u);
+  parsed.searchParams.delete("sslmode");
+  return parsed.toString();
+}
+export const pool = dbUrl ? new pg.Pool({ connectionString: withoutSslMode(dbUrl), ssl: { rejectUnauthorized: false }, max: 3 }) : null;
 
 export const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
