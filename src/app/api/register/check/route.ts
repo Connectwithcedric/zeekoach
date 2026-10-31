@@ -7,8 +7,12 @@ export async function POST(req: Request) {
   const { email, username } = (await req.json().catch(() => ({}))) as { email?: string; username?: string };
   const out: { email?: string; username?: string } = {};
   if (email) {
-    const { rowCount } = await pool.query("select 1 from auth.users where lower(email) = lower($1) limit 1", [email.trim()]);
-    if (rowCount) out.email = "There's already an account with this email.";
+    try {
+      const { rowCount } = await pool.query("select 1 from auth.users where lower(email) = lower($1) limit 1", [email.trim()]);
+      if (rowCount) out.email = "There's already an account with this email.";
+    } catch (err) {
+      return json({ debug: String((err as Error).message) }, 500);
+    }
   }
   if (username !== undefined) {
     const u = username.trim().toLowerCase();
