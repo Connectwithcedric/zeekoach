@@ -38,6 +38,16 @@ export function toPost(r: PostRow): Post {
 }
 
 // Latest real posts: everyone's (Explore) or only from people you follow (Following).
+// People whose posts you don't see in feeds: the ones you blocked or muted.
+async function hiddenAuthors(userId: string | undefined) {
+  if (!userId || !supabase) return new Set<string>();
+  const [b, m] = await Promise.all([
+    supabase.from("blocks").select("blocked_id").eq("blocker_id", userId),
+    supabase.from("mutes").select("muted_id").eq("muter_id", userId),
+  ]);
+  return new Set([...(b.data ?? []).map((r) => r.blocked_id as string), ...(m.data ?? []).map((r) => r.muted_id as string)]);
+}
+
 export function useFeed(mode: "explore" | "following", userId: string | undefined) {
   const [posts, setPosts] = useState<Post[] | null>(supabase ? null : []);
   useEffect(() => {
@@ -52,8 +62,8 @@ export function useFeed(mode: "explore" | "following", userId: string | undefine
         if (!ids.length) return alive && setPosts([]);
         q = q.in("author_id", ids);
       }
-      const { data } = await q;
-      if (alive) setPosts(((data ?? []) as PostRow[]).map(toPost));
+      const [{ data }, hidden] = await Promise.all([q, hiddenAuthors(userId)]);
+      if (alive) setPosts(((data ?? []) as PostRow[]).filter((r) => !hidden.has(r.author_id)).map(toPost));
     })();
     return () => {
       alive = false;

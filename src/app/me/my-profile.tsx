@@ -63,6 +63,7 @@ export function MyProfile() {
                 <LogOut className="size-4" /> Log out
               </button>
             </div>
+            <MeLinks />
             <div className="mt-5 grid w-full grid-cols-3 rounded-[14px] bg-bg py-3 text-center">
               {([["Followers", counts.followers], ["Following", counts.following], ["Subscribers", 0]] as const).map(([l, n]) => (
                 <div key={l}><p className="text-[15px] font-bold">{n}</p><p className="text-[11px] font-semibold text-muted">{l}</p></div>
@@ -75,5 +76,23 @@ export function MyProfile() {
       center={<MySessions userId={user.id} isKoach={isKoach} />}
       right={<><FollowSuggestions /><RightRailFooter /></>}
     />
+  );
+}
+
+// Shortcuts to the pages that aren't in the top bar.
+function MeLinks() {
+  const { user } = useAuth();
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => {
+    if (!supabase || !user) return;
+    supabase.from("admins").select("user_id").eq("user_id", user.id).maybeSingle().then(({ data }) => setAdmin(!!data));
+  }, [user]);
+  const links = [["/bookings", "My bookings"], ["/notifications", "Notifications"], ["/settings/account", "Settings"], ...(admin ? [["/admin", "Admin"]] : [])];
+  return (
+    <nav className="mt-4 flex w-full flex-wrap justify-center gap-2">
+      {links.map(([href, label]) => (
+        <Link key={href} href={href} className="rounded-full bg-bg px-3 py-1.5 text-[12px] font-bold text-primary hover:bg-primary-soft">{label}</Link>
+      ))}
+    </nav>
   );
 }
