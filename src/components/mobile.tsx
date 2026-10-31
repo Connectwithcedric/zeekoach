@@ -36,7 +36,7 @@ const inputClass = "h-14 w-full rounded-[16px] border-2 border-transparent bg-su
 export function Input({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="text-[14px] font-bold">{label}</span>
+      <span className="block text-[14px] font-bold">{label}</span>
       <input {...props} className={`mt-2 ${inputClass}`} />
     </label>
   );
@@ -46,7 +46,7 @@ export function PasswordInput({ label, ...props }: { label: string } & React.Inp
   const [shown, setShown] = useState(false);
   return (
     <label className="block">
-      <span className="text-[14px] font-bold">{label}</span>
+      <span className="block text-[14px] font-bold">{label}</span>
       <span className="relative mt-2 block">
         <input {...props} type={shown ? "text" : "password"} className={`${inputClass} pr-14`} />
         <button type="button" onClick={() => setShown(!shown)} aria-label={shown ? "Hide password" : "Show password"} className="absolute right-2 top-1/2 grid size-10 -translate-y-1/2 place-items-center text-muted">
@@ -94,5 +94,25 @@ export function Logo({ light }: { light?: boolean }) {
     <span className={`text-[22px] font-extrabold tracking-tight ${light ? "text-white" : "text-primary"}`}>
       Zee<span className={light ? "text-yellow" : "text-ink"}>Koach</span>
     </span>
+  );
+}
+
+export function Select({ label, children, ...props }: { label: string } & React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <label className="block min-w-0">
+      {label && <span className="mb-2 block text-[14px] font-bold">{label}</span>}
+      <select {...props} className={`${inputClass} appearance-none bg-[url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e8e9e' stroke-width='2' fill='none'/%3E%3C/svg%3E")] bg-[position:right_14px_center] bg-no-repeat pr-9`}>
+        {children}
+      </select>
+    </label>
+  );
+}
+
+export function Rule({ ok, children }: { ok: boolean; children: React.ReactNode }) {
+  return (
+    <li className={`flex items-center gap-2 text-[13px] font-semibold ${ok ? "text-primary" : "text-muted"}`}>
+      <span className={`grid size-4 place-items-center rounded-full text-[10px] text-white ${ok ? "bg-primary" : "bg-line"}`}>✓</span>
+      {children}
+    </li>
   );
 }
