@@ -8,6 +8,7 @@ import { Stars } from "@/components/reviews";
 import { Card, Photo } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatPrice, type PhotoKey } from "@/lib/data";
+import { useToday } from "@/lib/use-today";
 import type { SessionRow } from "@/lib/live-data";
 import { supabase } from "@/lib/supabase";
 
@@ -25,6 +26,7 @@ export function Bookings() {
   const [reviewing, setReviewing] = useState<Booking | null>(null);
   const [asking, setAsking] = useState<{ b: Booking; refund: boolean } | null>(null);
   const [msg, setMsg] = useState("");
+  const today = useToday();
 
   useEffect(() => {
     if (!supabase || !user) return;
@@ -44,7 +46,8 @@ export function Bookings() {
       </Card>
     );
 
-  const now = new Date().toISOString();
+  // Null while prerendering, so the page stays static.
+  const now = today ? new Date().toISOString() : "";
   const shown = (list ?? []).filter((b) =>
     tab === "canceled" ? b.status === "cancelled" || b.session.status === "cancelled" : b.status === "confirmed" && b.session.status !== "cancelled" && (tab === "upcoming" ? b.session.ends_at >= now : b.session.ends_at < now),
   );

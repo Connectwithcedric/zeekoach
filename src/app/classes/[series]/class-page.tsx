@@ -11,6 +11,7 @@ import { RichText } from "@/components/rich-text";
 import { Card, Photo } from "@/components/ui";
 import { formatPrice, type PhotoKey } from "@/lib/data";
 import type { SessionRow } from "@/lib/live-data";
+import { useToday } from "@/lib/use-today";
 import { supabase, type Profile } from "@/lib/supabase";
 
 type CComment = { id: string; parent_id: string | null; body: string; created_at: string; author: Profile };
@@ -24,6 +25,7 @@ export function ClassPage({ series }: { series: string }) {
   const [comments, setComments] = useState<CComment[]>([]);
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<CComment | null>(null);
+  const today = useToday();
 
   useEffect(() => {
     if (!supabase) return;
@@ -67,7 +69,7 @@ export function ClassPage({ series }: { series: string }) {
     setReplyTo(null);
   }
 
-  const now = new Date().toISOString();
+  const now = today ? new Date().toISOString() : "";
   const upcoming = dates.filter((d) => d.ends_at >= now && d.status !== "cancelled");
   const liked = !!user && likes.includes(user.id);
   const followed = !!user && follows.includes(user.id);
