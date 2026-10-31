@@ -13,6 +13,7 @@ import type { Post, Session } from "@/lib/data";
 import { registerSessionRow, type PlaceRow, type SessionRow } from "@/lib/live-data";
 import { postSelect, toPost, type PostRow } from "@/lib/posts";
 import { supabase, type Profile } from "@/lib/supabase";
+import { ShareToChat } from "@/components/share-to-chat";
 
 export function PlacePage({ id }: { id: string }) {
   const router = useRouter();
@@ -79,6 +80,7 @@ export function PlacePage({ id }: { id: string }) {
             {place.lat != null && (
               <a href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`} target="_blank" rel="noreferrer" className="flex h-10 items-center rounded-[10px] bg-bg px-4 text-[13px] font-bold text-primary">Directions</a>
             )}
+            <ShareToChat type="place" id={place.id} label="Send" className="flex h-10 items-center gap-2 rounded-[10px] bg-bg px-4 text-[13px] font-bold text-ink hover:text-primary" />
             <button onClick={follow} className={`h-10 rounded-[10px] px-5 text-[13px] font-bold ${following ? "bg-primary-soft text-primary" : "bg-primary text-white"}`}>{following ? "Following" : "Follow"}</button>
           </div>
         </div>

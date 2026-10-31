@@ -6,6 +6,7 @@ import { CalendarDays } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Modal } from "@/components/modal";
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { ShareToChat } from "@/components/share-to-chat";
 import { Card } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { Session } from "@/lib/data";
@@ -63,6 +64,7 @@ export function SessionExtras({ session }: { session: Session }) {
     <div className="w-full max-w-[410px] space-y-[20px] lg:w-[320px]">
       {cancelled && <p className="rounded-[12px] bg-[#fdecee] px-4 py-3 text-[13px] font-bold text-live">This session was cancelled. Everyone who booked was refunded.</p>}
       {msg && !cancelled && <p className="rounded-[12px] bg-primary-soft px-4 py-3 text-[13px] font-semibold text-primary">{msg}</p>}
+      {!cancelled && <ShareToChat type="session" id={session.id} className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-surface text-[13px] font-bold text-primary hover:bg-primary-soft" />}
       {session.seriesId && (
         <Card className="px-[22px] py-[20px]">
           <div className="flex items-center justify-between">

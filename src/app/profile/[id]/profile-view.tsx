@@ -9,6 +9,7 @@ import { ProfileContent } from "@/components/profile-tabs";
 import { ReviewsCard } from "@/components/reviews";
 import { Avatar, Card, Fab, OutlineButton, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { roleLabel, type Person, type Session } from "@/lib/data";
+import { ShareToChat } from "@/components/share-to-chat";
 
 const socials = [Globe, LinkedinIcon, InstagramIcon, FacebookIcon, TwitterIcon, TiktokIcon];
 
@@ -24,6 +25,7 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
             <OutlineButton href="/upgrade">Upgrade to ProKoach!</OutlineButton>
             <Card className="relative px-[25px] pb-[25px] pt-[26px]">
               <ProfileMenu personId={person.id} name={person.name} real={!!person.real} />
+              {person.real && <span className="absolute left-[25px] top-[26px]"><ShareToChat type="profile" id={person.id} label="Send profile in chat" /></span>}
               <div className="flex flex-col items-center">
                 <div className={`w-[110px] rounded-[16px] p-[3px] ${person.role === "member" ? "" : frame}`}>
                   {person.real ? (

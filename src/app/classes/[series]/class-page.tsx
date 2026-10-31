@@ -13,6 +13,7 @@ import { formatPrice, type PhotoKey } from "@/lib/data";
 import type { SessionRow } from "@/lib/live-data";
 import { useToday } from "@/lib/use-today";
 import { supabase, type Profile } from "@/lib/supabase";
+import { ShareToChat } from "@/components/share-to-chat";
 
 type CComment = { id: string; parent_id: string | null; body: string; created_at: string; author: Profile };
 
@@ -106,6 +107,7 @@ export function ClassPage({ series }: { series: string }) {
               <button onClick={() => toggle("class_follows", follows, setFollows)} aria-pressed={followed} className={`flex h-10 items-center gap-2 rounded-[10px] px-4 text-[13px] font-bold ${followed ? "bg-primary-soft text-primary" : "bg-primary text-white"}`}>
                 {followed ? <BellOff className="size-4" /> : <Bell className="size-4" />} {followed ? "Following" : "Follow class"}
               </button>
+              <ShareToChat type="class" id={series} label="Send" className="flex h-10 items-center gap-2 rounded-[10px] bg-bg px-4 text-[13px] font-bold text-ink hover:text-primary" />
             </div>
             <p className="mt-2 text-[11px] font-semibold text-muted">Followers hear when new dates are added.</p>
           </div>

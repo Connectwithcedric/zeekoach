@@ -12,6 +12,7 @@ import { Avatar, Photo } from "@/components/ui";
 import { getPerson, people, posts as demoPosts, type Post } from "@/lib/data";
 import { registerProfile } from "@/lib/live-data";
 import { supabase, type Profile } from "@/lib/supabase";
+import { ShareToChat } from "@/components/share-to-chat";
 
 function Media({ post }: { post: Post }) {
   const [i, setI] = useState(0);
@@ -185,6 +186,7 @@ export function PostView({ post }: { post: Post }) {
             </button>
             <span className="flex items-center gap-1.5"><MessageSquareText className="size-5" /> {real ? comments.length : post.comments + comments.length}</span>
             <span className="flex items-center gap-1.5"><Eye className="size-5" /> {post.views + (real ? 1 : 0)}</span>
+            {real && <span className="ml-auto"><ShareToChat type="post" id={post.id} /></span>}
           </div>
           {replyTo && (
             <p className="mt-3 flex items-center justify-between rounded-[8px] bg-bg px-3 py-1.5 text-[12px] font-semibold text-muted">
