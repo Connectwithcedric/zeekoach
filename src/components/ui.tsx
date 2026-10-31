@@ -129,7 +129,7 @@ export function FollowUs() {
           </a>
         ))}
       </Card>
-      <p className="mt-[20px] text-center text-xs font-semibold text-primary">Version 1.1 © 2026 ZeeKoach</p>
+      <p className="mt-[20px] text-center text-xs font-semibold text-primary">Version 1.1 © 2026 zKoach</p>
     </div>
   );
 }

@@ -270,7 +270,7 @@ export function SignupForm() {
           Sign Up
         </Button>
         <p className="mt-3 text-center text-[10px] font-medium text-[#8b8b9c]">
-          By registering, you agree to ZeeKoach&apos;s Terms of Use and confirm that you have read ZeeKoach&apos;s Privacy Policy.
+          By registering, you agree to zKoach&apos;s Terms of Use and confirm that you have read zKoach&apos;s Privacy Policy.
         </p>
       </div>
     </Modal>

@@ -238,7 +238,7 @@ export function BookingFlow({ session }: { session: Session }) {
                     }}
                   >
                     <p className="text-center text-[13px] font-semibold leading-[1.5] text-muted">
-                      Contacts from outside of ZeeKoach can retrieve their booking after downloading the app.
+                      Contacts from outside of zKoach can retrieve their booking after downloading the app.
                     </p>
                     {(["name", "email", "phone"] as const).map((k) => (
                       <input
@@ -338,7 +338,7 @@ export function BookingFlow({ session }: { session: Session }) {
                 </div>
               </>
             )}
-            {method === "wallet" && <p className="mt-[25px] rounded-[10px] bg-bg p-3 text-[13px] font-semibold text-muted">Paid from your ZeeKoach wallet balance.</p>}
+            {method === "wallet" && <p className="mt-[25px] rounded-[10px] bg-bg p-3 text-[13px] font-semibold text-muted">Paid from your zKoach wallet balance.</p>}
 
             <div className="mt-[25px] flex items-center gap-[15px] rounded-[14px] bg-bg p-[12px]">
               <img src={photo(koach.photo, 42, 42, true)} alt="" className="size-[42px] rounded-[10px] object-cover" />

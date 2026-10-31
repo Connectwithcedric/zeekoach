@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Go } from "./go";
 
-export const metadata: Metadata = { title: "Join ZeeKoach" };
+export const metadata: Metadata = { title: "Join zKoach" };
 
 export function generateStaticParams() {
   return [{ code: "zeekoach" }];

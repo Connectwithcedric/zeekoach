@@ -9,7 +9,7 @@ import { ChevronDown, ChevronLeft, Eye, EyeOff, X } from "lucide-react";
 // card over the page, underlined fields, a full-width purple button.
 
 export function Logo({ className = "" }: { className?: string }) {
-  return <span className={`text-[22px] font-extrabold tracking-tight text-primary ${className}`}>ZeeKoach</span>;
+  return <span className={`text-[22px] font-extrabold tracking-tight text-primary ${className}`}>zKoach</span>;
 }
 
 export function Modal({ children, title, tabs, onBack, banner, wide }: { children: React.ReactNode; title?: string; tabs?: "in" | "up"; onBack?: () => void; banner?: React.ReactNode; wide?: boolean }) {

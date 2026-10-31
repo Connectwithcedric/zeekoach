@@ -2,24 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, MessageSquareText, ThumbsUp, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Eye, MessageSquareText, ThumbsUp, Trash2, UserRound, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { FollowToggle } from "@/components/follow-toggle";
+import { CommentList, ago, useComments, type Comment } from "@/components/comments";
+import { RichText } from "@/components/rich-text";
 import { Avatar, Photo } from "@/components/ui";
-import { getPerson, people, posts as demoPosts, type Person, type Post } from "@/lib/data";
+import { getPerson, people, posts as demoPosts, type Post } from "@/lib/data";
 import { registerProfile } from "@/lib/live-data";
 import { supabase, type Profile } from "@/lib/supabase";
-
-type Comment = { id: string; body: string; created_at: string; author: Person };
-
-const ago = (iso: string) => {
-  const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  return `${Math.floor(s / 86400)}d`;
-};
 
 function Media({ post }: { post: Post }) {
   const [i, setI] = useState(0);
@@ -55,28 +47,27 @@ export function PostView({ post }: { post: Post }) {
   const author = (post.authorId && getPerson(post.authorId)) || people[demoPosts.findIndex((p) => p.id === post.id) % people.length] || people[0];
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(post.likes);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const real = !!post.real && !!supabase;
+  const [comments, setComments] = useComments(post.id, real);
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  const [tagged, setTagged] = useState<{ id: string; name: string }[]>([]);
+  const input = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
-  const real = !!post.real && !!supabase;
 
   useEffect(() => {
     if (!real) return;
     let alive = true;
     supabase!.rpc("add_post_view", { pid: post.id });
     supabase!
-      .from("post_comments")
-      .select("id, body, created_at, author:profiles!post_comments_user_id_fkey(*)")
+      .from("post_tags")
+      .select("user:profiles!post_tags_user_id_fkey(*)")
       .eq("post_id", post.id)
-      .order("created_at")
       .then(({ data }) => {
         if (!alive) return;
-        setComments(
-          ((data ?? []) as unknown as { id: string; body: string; created_at: string; author: Profile }[]).map((c) => {
-            registerProfile(c.author);
-            return { id: c.id, body: c.body, created_at: c.created_at, author: getPerson(c.author.id)! };
-          }),
-        );
+        const list = ((data ?? []) as unknown as { user: Profile }[]).map((t) => t.user);
+        list.forEach(registerProfile);
+        setTagged(list.map((u) => ({ id: u.id, name: u.name })));
       });
     return () => {
       alive = false;
@@ -113,16 +104,20 @@ export function PostView({ post }: { post: Post }) {
     e.preventDefault();
     const body = draft.trim();
     if (!body) return;
+    const me = getPerson(user?.id ?? "") ?? people[0];
+    const parent = replyTo ? replyTo.parent_id ?? replyTo.id : null;
     if (!real) {
-      setComments((c) => [...c, { id: String(Date.now()), body, created_at: new Date().toISOString(), author: getPerson(user?.id ?? "") ?? people[0] }]);
+      setComments((c) => [...c, { id: String(Date.now()), parent_id: parent, body, created_at: new Date().toISOString(), author: me, likes: 0, liked: false }]);
+      setReplyTo(null);
       return setDraft("");
     }
     if (!user) return router.push("/login");
     setBusy(true);
-    const { data, error } = await supabase!.from("post_comments").insert({ post_id: post.id, user_id: user.id, body }).select("id, created_at").single();
+    const { data, error } = await supabase!.from("post_comments").insert({ post_id: post.id, user_id: user.id, body, parent_id: parent }).select("id, created_at").single();
     setBusy(false);
     if (error || !data) return;
-    setComments((c) => [...c, { id: data.id, body, created_at: data.created_at, author: getPerson(user.id) ?? author }]);
+    setComments((c) => [...c, { id: data.id, parent_id: parent, body, created_at: data.created_at, author: getPerson(user.id) ?? author, likes: 0, liked: false }]);
+    setReplyTo(null);
     setDraft("");
   }
 
@@ -163,18 +158,24 @@ export function PostView({ post }: { post: Post }) {
           )}
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4 md:max-h-[460px]">
-          {post.caption && <p className="whitespace-pre-line text-[14px] leading-relaxed">{post.caption}</p>}
-          {comments.map((c) => (
-            <div key={c.id} className="flex gap-3">
-              <Avatar person={c.author} size={32} />
-              <div className="min-w-0">
-                <p className="text-[13px]">
-                  <Link href={`/profile/${c.author.id}`} className="font-bold hover:text-primary">{c.author.name}</Link> {c.body}
-                </p>
-                <p className="mt-0.5 text-[11px] font-semibold text-muted">{ago(c.created_at)}</p>
-              </div>
-            </div>
-          ))}
+          {post.caption && <p className="whitespace-pre-line text-[14px] leading-relaxed"><RichText text={post.caption} /></p>}
+          {tagged.length > 0 && (
+            <p className="flex flex-wrap items-center gap-1.5 text-[12px] font-semibold text-muted">
+              <UserRound className="size-3.5" /> With
+              {tagged.map((t, i) => (
+                <Link key={t.id} href={`/profile/${t.id}`} className="font-bold text-ink hover:text-primary">{t.name}{i < tagged.length - 1 ? "," : ""}</Link>
+              ))}
+            </p>
+          )}
+          <CommentList
+            list={comments}
+            setList={setComments}
+            onReply={(c) => {
+              setReplyTo(c);
+              setDraft(`@${c.author.username ?? c.author.name.replace(/\s+/g, "").toLowerCase()} `);
+              input.current?.focus();
+            }}
+          />
           {!post.caption && !comments.length && <p className="text-[13px] font-semibold text-muted">No comments yet. Be the first!</p>}
         </div>
         <div className="border-t border-line px-5 py-3">
@@ -185,8 +186,15 @@ export function PostView({ post }: { post: Post }) {
             <span className="flex items-center gap-1.5"><MessageSquareText className="size-5" /> {real ? comments.length : post.comments + comments.length}</span>
             <span className="flex items-center gap-1.5"><Eye className="size-5" /> {post.views + (real ? 1 : 0)}</span>
           </div>
+          {replyTo && (
+            <p className="mt-3 flex items-center justify-between rounded-[8px] bg-bg px-3 py-1.5 text-[12px] font-semibold text-muted">
+              Replying to {replyTo.author.name}
+              <button type="button" aria-label="Cancel reply" onClick={() => { setReplyTo(null); setDraft(""); }}><X className="size-3.5" /></button>
+            </p>
+          )}
           <form onSubmit={comment} className="mt-3 flex gap-2">
             <input
+              ref={input}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               maxLength={1000}

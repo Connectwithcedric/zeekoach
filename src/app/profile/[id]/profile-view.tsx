@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { FollowSuggestions } from "@/components/suggestions";
-import { CalendarClock, Ellipsis, Globe, Pencil, Radio, Star } from "lucide-react";
+import { CalendarClock, Globe, Pencil, Radio, Star } from "lucide-react";
 import { FacebookIcon, InstagramIcon, LinkedinIcon, TiktokIcon, TwitterIcon } from "@/components/brand-icons";
 import { ClassCard } from "@/components/class-card";
 import { FollowToggle } from "@/components/follow-toggle";
+import { ProfileMenu } from "@/components/profile-menu";
 import { ProfileContent } from "@/components/profile-tabs";
+import { ReviewsCard } from "@/components/reviews";
 import { Avatar, Card, Fab, OutlineButton, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { roleLabel, type Person, type Session } from "@/lib/data";
 
@@ -21,9 +23,7 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
           <>
             <OutlineButton href="/upgrade">Upgrade to ProKoach!</OutlineButton>
             <Card className="relative px-[25px] pb-[25px] pt-[26px]">
-              <button aria-label="Profile options" className="absolute right-[25px] top-[14px] text-primary">
-                <Ellipsis className="size-5" />
-              </button>
+              <ProfileMenu personId={person.id} name={person.name} real={!!person.real} />
               <div className="flex flex-col items-center">
                 <div className={`w-[110px] rounded-[16px] p-[3px] ${person.role === "member" ? "" : frame}`}>
                   {person.real ? (
@@ -85,6 +85,7 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
                 ))}
               </div>
             </Card>
+            {person.real && person.role !== "member" && <ReviewsCard koachId={person.id} />}
           </>
         }
         center={

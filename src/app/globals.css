@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ZeeKoach design tokens, sampled from the Figma file. */
+/* zKoach design tokens, sampled from the Figma file. */
 :root {
   --zk-bg: #f6f6ff;
   --zk-surface: #ffffff;

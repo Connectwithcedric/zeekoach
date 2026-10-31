@@ -12,7 +12,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: { default: "ZeeKoach", template: "%s · ZeeKoach" },
+  title: { default: "zKoach", template: "%s · zKoach" },
   description: "Find a Koach near you, book sessions and train together.",
 };
 

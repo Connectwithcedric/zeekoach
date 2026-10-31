@@ -28,7 +28,7 @@ export function TopNav() {
   return (
     <header className="flex h-16 items-center rounded-card bg-surface px-4 lg:h-20 lg:px-6">
       <Link href="/" className="shrink-0 text-[17px] font-extrabold tracking-tight text-primary">
-        ZeeKoach
+        zKoach
       </Link>
 
       <form

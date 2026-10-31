@@ -23,12 +23,12 @@ export function storedReferral() {
 }
 
 // Opens the phone's share sheet when there is one, otherwise copies the link. Counts as a share either way.
-export async function shareReferral(p: Pick<Profile, "id" | "username">, text = "Find a Koach near you and train together on ZeeKoach") {
+export async function shareReferral(p: Pick<Profile, "id" | "username">, text = "Find a Koach near you and train together on zKoach") {
   const url = referralLink(p);
   supabase?.rpc("track_referral", { code: referralCode(p), kind: "share" }).then(() => {});
   if (navigator.share) {
     try {
-      await navigator.share({ title: "ZeeKoach", text, url });
+      await navigator.share({ title: "zKoach", text, url });
       return "shared";
     } catch {
       return "cancelled";

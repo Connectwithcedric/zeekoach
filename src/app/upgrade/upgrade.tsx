@@ -57,7 +57,7 @@ export function Upgrade() {
   if (!ready) return <AuthCard title="Upgrade to ProKoach"><p className="text-[13px] font-semibold text-muted">Loading…</p></AuthCard>;
   if (!user || !profile)
     return (
-      <AuthCard title="Upgrade to ProKoach" sub="Coach on ZeeKoach and stand out as a verified pro.">
+      <AuthCard title="Upgrade to ProKoach" sub="Coach on zKoach and stand out as a verified pro.">
         {perksList}
         <Link href="/signup" className="flex h-11 items-center justify-center rounded-[12px] bg-primary text-[14px] font-bold text-white">Create an account</Link>
         <p className="mt-4 text-center text-[13px] font-semibold text-muted">Already have one? <Link href="/login" className="font-bold text-primary">Log in</Link></p>

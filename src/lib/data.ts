@@ -52,6 +52,7 @@ export type Person = {
   streaming?: string; // class name when live right now
   real?: boolean; // a signed-up account from the database, not demo data
   avatarUrl?: string | null;
+  username?: string | null;
 };
 
 export const people: Person[] = [

@@ -30,7 +30,7 @@ const shortDate = (iso: string) => {
   const d = daysAgo(iso);
   return d === 0 ? "Today" : d === 1 ? "Yesterday" : new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" });
 };
-// Koaches receive the session price; the 10% service fee and 20% VAT on top go to ZeeKoach and tax.
+// Koaches receive the session price; the 10% service fee and 20% VAT on top go to zKoach and tax.
 const koachShare = (total: number) => Math.round((Number(total) / 1.32) * 100) / 100;
 
 // Real money movements for the signed-in person: what they paid for bookings and, for Koaches, what they earned.
@@ -215,7 +215,7 @@ export function HelpUsGrow() {
         <a href="/share" className="text-xs font-bold text-primary">Share &amp; Earn</a>
       </div>
       <p className="mt-3 text-[13px] font-semibold leading-relaxed text-muted">
-        Promote ZeeKoach from your favourite social networks and <b className="text-ink">earn lifetime commissions.</b>
+        Promote zKoach from your favourite social networks and <b className="text-ink">earn lifetime commissions.</b>
       </p>
       <div className="mt-4 flex items-center justify-between gap-2">
         <span className="truncate text-xs font-bold text-primary">{link}</span>
