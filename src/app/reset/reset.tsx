@@ -3,22 +3,24 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { BigButton, BigLink, Message, PasswordInput, Screen } from "@/components/mobile";
+import { Button, Heading, Message, Modal, PasswordField, Rule } from "@/components/auth-ui";
+import { passwordOk, passwordRules } from "@/lib/password";
 import { supabase } from "@/lib/supabase";
 
 // Opened from the reset email: the link signs the person in, then they choose a new password.
 export function Reset() {
   const router = useRouter();
   const { ready, user } = useAuth();
+  const [password, setPassword] = useState("");
+  const [again, setAgain] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const rules = passwordRules(password);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!supabase) return;
-    const form = new FormData(e.currentTarget);
-    const password = String(form.get("password"));
-    if (password !== String(form.get("again"))) return setError("The two passwords don't match.");
+    if (password !== again) return setError("The two passwords don't match.");
     setBusy(true);
     setError("");
     const { error } = await supabase.auth.updateUser({ password });
@@ -27,29 +29,34 @@ export function Reset() {
     router.push("/");
   }
 
-  if (!ready) return <Screen title="New password"><p className="text-[15px] font-semibold text-muted">Loading…</p></Screen>;
+  if (!ready) return <Modal title="Reset Your Password"><p className="mt-8 text-[12px] font-medium text-[#8b8b9c]">Loading…</p></Modal>;
 
   if (!user)
     return (
-      <Screen back="/login" title="This link has expired" sub="Reset links work once and only for a short time. Ask for a new one.">
-        <div className="mt-auto">
-          <BigLink href="/forgot">Send a new link</BigLink>
-        </div>
-      </Screen>
+      <Modal title="Reset Your Password">
+        <Heading className="mt-8">This link has expired</Heading>
+        <p className="mt-2 text-[12px] font-medium text-[#8b8b9c]">Reset links work once and only for a short time. Ask for a new one.</p>
+        <div className="mt-10"><Button onClick={() => router.push("/forgot")}>Send a new link</Button></div>
+      </Modal>
     );
 
   return (
-    <Screen title="Choose a new password" sub="You'll use it to log in from now on.">
-      <form onSubmit={onSubmit} className="flex flex-1 flex-col">
-        <div className="space-y-4">
-          <PasswordInput label="New password" name="password" autoComplete="new-password" required minLength={6} placeholder="At least 6 characters" />
-          <PasswordInput label="Type it again" name="again" autoComplete="new-password" required minLength={6} />
-          {error && <Message tone="error">{error}</Message>}
+    <Modal title="Reset Your Password">
+      <form onSubmit={onSubmit}>
+        <Heading className="mt-8">Choose a new password</Heading>
+        <div className="mt-5 space-y-5">
+          <div>
+            <PasswordField label="New password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <ul className="mt-3 space-y-2">
+              <Rule ok={rules.length}>8 to 30 characters</Rule>
+              <Rule ok={rules.mix}>Mix upper-lowercase letters, numbers and special characters</Rule>
+            </ul>
+          </div>
+          <PasswordField label="Type it again" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} />
         </div>
-        <div className="mt-auto pt-8">
-          <BigButton busy={busy}>Save password</BigButton>
-        </div>
+        {error && <div className="mt-5"><Message tone="error">{error}</Message></div>}
+        <div className="mt-10"><Button busy={busy} disabled={!passwordOk(password) || !again}>Save password</Button></div>
       </form>
-    </Screen>
+    </Modal>
   );
 }

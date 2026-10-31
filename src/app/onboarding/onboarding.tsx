@@ -1,48 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Camera, Check, PartyPopper } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { BigButton, BigLink, Input, Message, Screen, Select, Steps } from "@/components/mobile";
+import { Button, Field, Heading, Message, Modal, SelectField } from "@/components/auth-ui";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { supabase } from "@/lib/supabase";
 
-const sportsList = [
-  "Fitness", "Running", "Tennis", "Padel", "Boxing", "Yoga", "Pilates", "Football", "Basketball", "Swimming",
-  "Cycling", "Martial arts", "CrossFit", "Dance", "Climbing", "Golf",
-];
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const thisYear = new Date().getFullYear();
 const years = Array.from({ length: 100 }, (_, i) => thisYear - 13 - i);
+const BOX = 240; // crop window, in px
+const OUT = 512; // saved photo size
 
-type Step = "details" | "photo" | "sports" | "price" | "welcome";
+type Step = "details" | "photo" | "crop" | "welcome";
 
 const post = (url: string, body: unknown) => fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json().catch(() => ({})));
 
-// After the email link (or Apple / Google): finish what's missing, add a photo, pick sports, then welcome.
+// Figma: Elements > SignIn/SignUp, after the email link (or Google / Apple):
+// "Set Your Profile Picture", "Crop Picture", then "Welcome!" with the Koach question, like the old app.
 export function Onboarding() {
+  const router = useRouter();
   const { ready, user, profile, refresh } = useAuth();
-  const [steps, setSteps] = useState<Step[] | null>(null);
-  const [at, setAt] = useState(0);
+  const [step, setStep] = useState<Step | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
   const [username, setUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [birthday, setBirthday] = useState({ m: 0, d: 0, y: 0 });
-  const [sports, setSports] = useState<string[]>([]);
-  const [rate, setRate] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
 
-  // Decide the steps once, from what the account already has: Apple and Google sign ups have no username or birthday yet.
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  // Google and Apple sign ups have no username or birthday yet, so they fill those in first.
   useEffect(() => {
-    if (!profile || steps) return;
-    const p = profile;
-    const list: Step[] = [];
-    if (!p.username || !p.birthday) list.push("details");
-    list.push("photo", "sports");
-    if (p.role !== "member") list.push("price");
-    setTimeout(() => setSteps(list), 0);
-  }, [profile, steps]);
+    if (!profile || step) return;
+    setTimeout(() => setStep(!profile.username || !profile.birthday ? "details" : "photo"), 0);
+  }, [profile, step]);
 
   useEffect(() => {
     if (!username) return;
@@ -50,20 +49,15 @@ export function Onboarding() {
     return () => clearTimeout(t);
   }, [username]);
 
-  if (!ready || (user && profile && !steps)) return <Screen><p className="text-[15px] font-semibold text-muted">Loading…</p></Screen>;
-  if (!user || !profile || !steps)
+  if (!ready || (user && profile && !step)) return <Modal title="Sign Up"><p className="mt-8 text-[12px] font-medium text-[#8b8b9c]">Loading…</p></Modal>;
+  if (!user || !profile)
     return (
-      <Screen back="/" title="Log in first" sub="Your account is active. Log in to finish setting it up.">
-        <div className="mt-auto">
-          <BigLink href="/login">Log in</BigLink>
-        </div>
-      </Screen>
+      <Modal title="Sign Up">
+        <Heading className="mt-8">Your account is active</Heading>
+        <p className="mt-2 text-[12px] font-medium text-[#8b8b9c]">Sign in to finish setting it up.</p>
+        <div className="mt-10"><Button onClick={() => router.push("/login")}>Sign In</Button></div>
+      </Modal>
     );
-
-  const step: Step = steps[at] ?? "welcome";
-  const koach = profile.role !== "member";
-  const { m, d, y } = birthday;
-  const birthdayOk = !!(m && d && y) && new Date(y, m - 1, d).getMonth() === m - 1;
 
   async function save(fields: Record<string, unknown>) {
     if (!supabase || !user) return false;
@@ -78,141 +72,179 @@ export function Onboarding() {
     return true;
   }
 
-  async function onPhoto(file: File | undefined) {
-    if (!supabase || !user || !file) return;
-    if (file.size > 5 * 1024 * 1024) return setError("Pick a photo under 5 MB.");
-    setUploading(true);
+  function pick(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return setError("Pick a photo (JPG, PNG or HEIC).");
+    if (file.size > 10 * 1024 * 1024) return setError("Pick a photo under 10 MB.");
     setError("");
-    const path = `${user.id}/avatar-${Date.now()}.${file.name.split(".").pop() || "jpg"}`;
-    const up = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
-    if (up.error) {
-      setUploading(false);
-      return setError(`Photo upload failed: ${up.error.message}`);
-    }
-    await supabase.from("profiles").update({ avatar_url: supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl }).eq("id", user.id);
-    await refresh();
-    setUploading(false);
+    const el = new Image();
+    el.onload = () => {
+      setImg(el);
+      setZoom(1);
+      setPos({ x: 0, y: 0 });
+      setStep("crop");
+    };
+    el.onerror = () => setError("This photo can't be opened. Try another one.");
+    el.src = URL.createObjectURL(file);
   }
 
-  async function next() {
-    if (step === "details" && !(await save({ username: username.trim().toLowerCase(), birthday: `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}` }))) return;
-    if (at === steps!.length - 1) {
-      if (!(await save({ sports, hourly_rate: koach && rate ? Number(rate) : null, onboarded: true }))) return;
-      await refresh();
-    }
-    setAt(at + 1);
-  }
-
-  if (step === "welcome")
-    return (
-      <main className="flex min-h-dvh flex-col bg-primary px-6 pb-8 pt-24 text-center text-white">
-        <div className="mx-auto">
-          <ProfileAvatar profile={profile} size={112} />
-        </div>
-        <PartyPopper className="mx-auto mt-8 size-10 text-yellow" />
-        <h1 className="mt-4 text-[30px] font-extrabold leading-tight tracking-tight">Welcome to ZeeKoach, {profile.name.split(" ")[0] || "friend"}!</h1>
-        <p className="mt-3 text-[16px] font-semibold text-white/80">Your account is ready. Let&apos;s find you a Koach.</p>
-        <div className="mt-auto pt-10">
-          <BigLink href="/" light>
-            Let&apos;s go
-          </BigLink>
-        </div>
-      </main>
-    );
-
-  const copy: Record<Exclude<Step, "welcome">, [string, string]> = {
-    details: ["Finish your account", "Pick a username and tell us your birthday."],
-    photo: ["Add a profile photo", "So Koaches and friends recognise you."],
-    sports: [koach ? "Which sports do you coach?" : "Which sports do you do?", "Pick as many as you like. We use this to show you the right Koaches and sessions."],
-    price: ["Your price", "How much for one hour with one person? You can change it any time."],
+  // The photo covers the square at zoom 1; pos is the offset of its centre, kept inside the square.
+  const base = img ? BOX / Math.min(img.naturalWidth, img.naturalHeight) : 1;
+  const w = img ? img.naturalWidth * base * zoom : BOX;
+  const h = img ? img.naturalHeight * base * zoom : BOX;
+  const clamp = (p: { x: number; y: number }, z = zoom) => {
+    const mx = img ? (img.naturalWidth * base * z - BOX) / 2 : 0;
+    const my = img ? (img.naturalHeight * base * z - BOX) / 2 : 0;
+    return { x: Math.max(-mx, Math.min(mx, p.x)), y: Math.max(-my, Math.min(my, p.y)) };
   };
 
-  const canGo =
-    step === "details" ? username.length >= 3 && !usernameError && birthdayOk : step === "sports" ? sports.length > 0 : step === "price" ? !!Number(rate) : true;
+  async function uploadCrop() {
+    if (!supabase || !user || !img) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = OUT;
+    const k = OUT / BOX;
+    canvas.getContext("2d")!.drawImage(img, (BOX / 2 - w / 2 + pos.x) * k, (BOX / 2 - h / 2 + pos.y) * k, w * k, h * k);
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.9));
+    if (!blob) return setError("Couldn't save the photo, try again.");
+    setBusy(true);
+    setError("");
+    const path = `${user.id}/avatar-${Date.now()}.jpg`;
+    const up = await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+    if (up.error) {
+      setBusy(false);
+      return setError(`Photo upload failed: ${up.error.message}`);
+    }
+    setBusy(false);
+    if (!(await save({ avatar_url: supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl }))) return;
+    await refresh();
+    setStep("welcome");
+  }
+
+  async function finish(koach: boolean) {
+    if (!(await save({ role: koach ? "koach" : "member", onboarded: true }))) return;
+    await refresh();
+    router.push("/");
+  }
+
+  if (step === "details") {
+    const { m, d, y } = birthday;
+    const born = new Date(y, m - 1, d);
+    const limit = new Date();
+    limit.setFullYear(limit.getFullYear() - 13);
+    const birthdayOk = !!(m && d && y) && born.getMonth() === m - 1 && born <= limit;
+    return (
+      <Modal title="Sign Up">
+        <Heading className="mt-8">Pick a username</Heading>
+        <div className="mt-3">
+          <Field placeholder="Username" autoCapitalize="none" autoCorrect="off" value={username} onChange={(e) => { setUsername(e.target.value.replace(/\s/g, "")); setUsernameError(""); }} error={usernameError} />
+        </div>
+        <Heading className="mt-8">When&apos;s your birthday?</Heading>
+        <div className="mt-3 grid grid-cols-[1.7fr_1fr_1.1fr] gap-4">
+          <SelectField label="Month" value={m} onChange={(e) => setBirthday({ ...birthday, m: Number(e.target.value) })}>
+            <option value={0} disabled>Month</option>
+            {months.map((x, i) => <option key={x} value={i + 1}>{x}</option>)}
+          </SelectField>
+          <SelectField label="Day" value={d} onChange={(e) => setBirthday({ ...birthday, d: Number(e.target.value) })}>
+            <option value={0} disabled>Day</option>
+            {Array.from({ length: 31 }, (_, i) => <option key={i} value={i + 1}>{String(i + 1).padStart(2, "0")}</option>)}
+          </SelectField>
+          <SelectField label="Year" value={y} onChange={(e) => setBirthday({ ...birthday, y: Number(e.target.value) })}>
+            <option value={0} disabled>Year</option>
+            {years.map((x) => <option key={x} value={x}>{x}</option>)}
+          </SelectField>
+        </div>
+        {m > 0 && d > 0 && y > 0 && !birthdayOk && <p className="mt-2 text-[12px] font-semibold text-live">You must be at least 13 years old.</p>}
+        {error && <div className="mt-5"><Message tone="error">{error}</Message></div>}
+        <div className="mt-10">
+          <Button
+            busy={busy}
+            disabled={username.length < 3 || !!usernameError || !birthdayOk}
+            onClick={async () => {
+              if (await save({ username: username.trim().toLowerCase(), birthday: `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}` })) setStep("photo");
+            }}
+          >
+            Next
+          </Button>
+        </div>
+      </Modal>
+    );
+  }
+
+  if (step === "crop" && img)
+    return (
+      <Modal title="Crop Picture" onBack={() => setStep("photo")}>
+        <div
+          className="relative mx-auto mt-8 cursor-grab touch-none overflow-hidden rounded-[10px] bg-[#f4f4ff] active:cursor-grabbing"
+          style={{ width: BOX, height: BOX }}
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            drag.current = { x: e.clientX, y: e.clientY, px: pos.x, py: pos.y };
+          }}
+          onPointerMove={(e) => {
+            const s = drag.current;
+            if (s) setPos(clamp({ x: s.px + e.clientX - s.x, y: s.py + e.clientY - s.y }));
+          }}
+          onPointerUp={() => (drag.current = null)}
+        >
+          <img src={img.src} alt="" draggable={false} className="pointer-events-none absolute max-w-none select-none" style={{ width: w, height: h, left: BOX / 2 - w / 2 + pos.x, top: BOX / 2 - h / 2 + pos.y }} />
+        </div>
+        <p className="mt-3 text-center text-[11px] font-medium text-[#8b8b9c]">Drag the photo to move it</p>
+        <div className="mt-6 flex items-center gap-3 text-[14px] font-bold text-[#8b8b9c]">
+          <span>−</span>
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.01}
+            value={zoom}
+            aria-label="Zoom"
+            onChange={(e) => {
+              const z = Number(e.target.value);
+              setZoom(z);
+              setPos((p) => clamp(p, z));
+            }}
+            className="w-full accent-[#6b48ff]"
+          />
+          <span>+</span>
+        </div>
+        {error && <div className="mt-5"><Message tone="error">{error}</Message></div>}
+        <div className="mt-8"><Button busy={busy} onClick={uploadCrop}>Done</Button></div>
+      </Modal>
+    );
+
+  if (step === "welcome") {
+    return (
+      <Modal title="Welcome!">
+        <div className="mt-8 flex flex-col items-center text-center">
+          <ProfileAvatar profile={profile} size={96} />
+          <p className="mt-4 text-[16px] font-bold">{profile.name}</p>
+          {profile.username && <p className="text-[12px] font-medium text-[#8b8b9c]">@{profile.username}</p>}
+          <Heading className="mt-8">Are you interested in Koaching people?</Heading>
+        </div>
+        {error && <div className="mt-5"><Message tone="error">{error}</Message></div>}
+        <div className="mt-6 space-y-3">
+          <Button busy={busy} onClick={() => finish(true)}>Yes, I want to become a Koach</Button>
+          <Button light disabled={busy} onClick={() => finish(false)}>No, I just want to browse</Button>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
-    <Screen back={at > 0 ? () => setAt(at - 1) : undefined} title={copy[step][0]} sub={copy[step][1]}>
-      <Steps count={steps.length} at={at} />
-
-      {step === "details" && (
-        <div className="mt-8 space-y-4">
-          <div>
-            <Input label="Username" autoCapitalize="none" autoCorrect="off" value={username} onChange={(e) => { setUsername(e.target.value.replace(/\s/g, "")); setUsernameError(""); }} placeholder="e.g. cedric.runs" />
-            {usernameError && <p className="mt-2 text-[13px] font-semibold text-live">{usernameError}</p>}
-          </div>
-          <div>
-            <span className="text-[14px] font-bold">Birthday</span>
-            <div className="mt-2 grid grid-cols-[1.6fr_1fr_1.2fr] gap-2">
-              <Select label="" aria-label="Month" value={m} onChange={(e) => setBirthday({ ...birthday, m: Number(e.target.value) })}>
-                <option value={0} disabled>Month</option>
-                {months.map((x, i) => <option key={x} value={i + 1}>{x}</option>)}
-              </Select>
-              <Select label="" aria-label="Day" value={d} onChange={(e) => setBirthday({ ...birthday, d: Number(e.target.value) })}>
-                <option value={0} disabled>Day</option>
-                {Array.from({ length: 31 }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
-              </Select>
-              <Select label="" aria-label="Year" value={y} onChange={(e) => setBirthday({ ...birthday, y: Number(e.target.value) })}>
-                <option value={0} disabled>Year</option>
-                {years.map((x) => <option key={x} value={x}>{x}</option>)}
-              </Select>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {step === "photo" && (
-        <label className="mx-auto mt-10 flex w-fit cursor-pointer flex-col items-center gap-4">
-          <span className="relative">
-            <ProfileAvatar profile={profile} size={140} />
-            <span className="absolute -bottom-1 -right-1 grid size-11 place-items-center rounded-full border-4 border-bg bg-primary text-white">
-              <Camera className="size-5" />
-            </span>
-          </span>
-          <span className="text-[15px] font-bold text-primary">{uploading ? "Uploading…" : profile.avatar_url ? "Change photo" : "Choose a photo"}</span>
-          <input type="file" accept="image/*" className="sr-only" onChange={(e) => onPhoto(e.target.files?.[0])} />
-        </label>
-      )}
-
-      {step === "sports" && (
-        <div className="mt-8 flex flex-wrap gap-2.5">
-          {sportsList.map((s) => {
-            const on = sports.includes(s);
-            return (
-              <button
-                key={s}
-                type="button"
-                aria-pressed={on}
-                onClick={() => setSports(on ? sports.filter((x) => x !== s) : [...sports, s])}
-                className={`flex h-11 items-center gap-1.5 rounded-full border-2 px-4 text-[15px] font-bold ${on ? "border-primary bg-primary text-white" : "border-transparent bg-surface text-ink"}`}
-              >
-                {on && <Check className="size-4" />}
-                {s}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {step === "price" && (
-        <div className="mt-8">
-          <label className="block">
-            <span className="text-[14px] font-bold">Price per hour</span>
-            <span className="mt-2 flex h-16 items-center rounded-[16px] border-2 border-transparent bg-surface px-4 focus-within:border-primary">
-              <span className="text-[24px] font-extrabold text-muted">$</span>
-              <input value={rate} onChange={(e) => setRate(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="40" className="w-full bg-transparent px-2 text-[24px] font-extrabold outline-none placeholder:text-line" />
-              <span className="text-[15px] font-bold text-muted">/ hour</span>
-            </span>
-          </label>
-        </div>
-      )}
-
+    <Modal title="Set Your Profile Picture">
+      <label
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); pick(e.dataTransfer.files[0]); }}
+        className={`mt-8 flex cursor-pointer flex-col items-center rounded-[10px] border-2 border-dashed px-6 py-10 text-center transition ${dragOver ? "border-primary bg-primary-soft" : "border-line bg-[#fafaff]"}`}
+      >
+        <span className="text-[14px] font-bold">Upload Media</span>
+        <span className="mt-5 grid size-14 place-items-center rounded-[12px] bg-primary text-white"><Plus className="size-7" /></span>
+        <span className="mt-4 text-[12px] font-medium text-[#8b8b9c]">Drag and drop here or <span className="font-bold text-primary">select a folder</span></span>
+        <input type="file" accept="image/*" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
+      </label>
       {error && <div className="mt-5"><Message tone="error">{error}</Message></div>}
-
-      <div className="mt-auto space-y-3 pt-8">
-        <BigButton busy={busy || uploading} disabled={!canGo} onClick={next}>
-          {step === "photo" && !profile.avatar_url ? "Skip for now" : "Continue"}
-        </BigButton>
-      </div>
-    </Screen>
+      <button type="button" onClick={() => setStep("welcome")} className="mx-auto mt-6 block text-[12px] font-bold text-[#8b8b9c] hover:text-ink">Skip for now</button>
+    </Modal>
   );
 }

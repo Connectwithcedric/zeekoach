@@ -16,14 +16,12 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#6b48ff", width: "device-width", initialScale: 1 };
 
-// Mobile first: every screen is phone-sized, centred on bigger screens.
+// Desktop first, like the Figma Desktop page. Every screen also has to work on a phone.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
-      <body className="min-h-full bg-[#e9e7f5] font-sans">
-        <div className="mx-auto min-h-dvh w-full max-w-[430px] bg-bg">
-          <AuthProvider>{children}</AuthProvider>
-        </div>
+      <body className="min-h-full bg-bg font-sans text-ink">
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
