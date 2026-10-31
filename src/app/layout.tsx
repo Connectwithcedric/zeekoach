@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
+import { OnboardingGate } from "@/components/onboarding-gate";
+import { TopNav } from "@/components/top-nav";
 import "./globals.css";
 
 // The Figma uses Gilroy, which needs a license. Plus Jakarta Sans is the closest free match.
@@ -16,12 +18,17 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#6b48ff", width: "device-width", initialScale: 1 };
 
-// Desktop first, like the Figma Desktop page. Every screen also has to work on a phone.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
-      <body className="min-h-full bg-bg font-sans text-ink">
-        <AuthProvider>{children}</AuthProvider>
+      <body className="min-h-full font-sans">
+        <div className="mx-auto w-full max-w-[1440px] px-4 pb-24 pt-4 sm:px-6 lg:pb-10 xl:px-10 xl:pt-[30px]">
+          <AuthProvider>
+            <OnboardingGate />
+            <TopNav />
+            {children}
+          </AuthProvider>
+        </div>
       </body>
     </html>
   );

@@ -12,30 +12,10 @@ export function Logo({ className = "" }: { className?: string }) {
   return <span className={`text-[22px] font-extrabold tracking-tight text-primary ${className}`}>ZeeKoach</span>;
 }
 
-// What sits behind the modals until the Discover page is built: the header and a short welcome.
-export function Backdrop() {
-  return (
-    <div aria-hidden className="min-h-dvh">
-      <header className="flex h-[70px] items-center justify-between bg-surface px-5 sm:px-10">
-        <Logo />
-        <div className="flex gap-2 text-[14px] font-bold sm:gap-3">
-          <span className="rounded-[10px] px-5 py-2.5 text-primary">Sign In</span>
-          <span className="rounded-[10px] bg-primary px-5 py-2.5 text-white">Sign Up</span>
-        </div>
-      </header>
-      <div className="mx-auto max-w-[1100px] px-5 pt-16 sm:px-10 sm:pt-24">
-        <h1 className="max-w-[620px] text-[38px] sm:text-[52px] font-extrabold leading-[1.05] tracking-tight">Train with a Koach near you.</h1>
-        <p className="mt-5 max-w-[520px] text-[18px] font-semibold text-muted">Find Koaches and sessions for every sport, book in a tap, and share your progress.</p>
-      </div>
-    </div>
-  );
-}
-
 export function Modal({ children, title, tabs, onBack, banner, wide }: { children: React.ReactNode; title?: string; tabs?: "in" | "up"; onBack?: () => void; banner?: React.ReactNode; wide?: boolean }) {
   const router = useRouter();
   return (
-    <div className="relative min-h-dvh">
-      <Backdrop />
+    <div>
       <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-[rgba(25,26,30,0.45)] px-4 py-[8vh]">
         <div className={`w-full ${wide ? "max-w-[460px]" : "max-w-[400px]"}`}>
           {banner}
