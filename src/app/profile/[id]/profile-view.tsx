@@ -10,6 +10,7 @@ import { ReviewsCard } from "@/components/reviews";
 import { Avatar, Card, Fab, OutlineButton, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { roleLabel, type Person, type Session } from "@/lib/data";
 import { ShareToChat } from "@/components/share-to-chat";
+import { TipButton } from "@/components/money-modal";
 
 const socials = [Globe, LinkedinIcon, InstagramIcon, FacebookIcon, TwitterIcon, TiktokIcon];
 
@@ -61,6 +62,7 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
                     <Link href={person.real ? `/chat?with=${person.id}` : "/chat"} className="flex h-[38px] items-center justify-center rounded-[10px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft">
                       Message
                     </Link>
+                    {person.real && person.role !== "member" && <TipButton to={person} className="col-span-full flex h-[38px] items-center justify-center gap-1.5 rounded-[10px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft" />}
                   </>
                 )}
               </div>

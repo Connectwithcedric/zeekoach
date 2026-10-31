@@ -11,6 +11,7 @@ import { formatPrice, type PhotoKey } from "@/lib/data";
 import { useToday } from "@/lib/use-today";
 import type { SessionRow } from "@/lib/live-data";
 import { supabase } from "@/lib/supabase";
+import { TipButton } from "@/components/money-modal";
 
 type Booking = { guests: number; total: number; status: "confirmed" | "cancelled"; session: SessionRow };
 type Tab = "upcoming" | "completed" | "canceled";
@@ -93,6 +94,7 @@ export function Bookings() {
                   </span>
                 </Link>
                 {tab === "upcoming" && <button onClick={() => setAsking({ b, refund: new Date(b.session.starts_at).getTime() - Date.now() > 86_400_000 })} className="h-9 w-[90px] rounded-[10px] bg-bg text-[13px] font-bold text-live">Cancel</button>}
+                {tab === "completed" && b.session.koach && <TipButton to={b.session.koach} className="h-9 rounded-[10px] bg-bg px-3 text-[13px] font-bold text-primary flex items-center gap-1" />}
                 {tab === "completed" &&
                   (reviewed.has(b.session.id) ? (
                     <span className="text-[12px] font-bold text-muted">Reviewed</span>
