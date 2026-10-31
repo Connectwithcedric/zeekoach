@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Award, CheckCheck, Compass, Eye, Flag, MessageSquare, Search, SendHorizontal, ThumbsUp, Upload, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { ShareToChat } from "@/components/share-to-chat";
 import { PillTabs } from "@/components/tabs-bar";
 import { Avatar, Card, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { currentUserId, getPerson, people, showSamples, type Person, type PhotoKey } from "@/lib/data";
@@ -124,6 +125,16 @@ export function ChallengeBoard() {
   const [ruleQuery, setRuleQuery] = useState("");
   const [custom, setCustom] = useState("");
   const [rule, setRule] = useState<string | null>(null);
+  const [topRules, setTopRules] = useState<string[]>([]);
+  const [focus, setFocus] = useState<string | null>(null);
+
+  // A link like /challenges?c=<id> (from a notification or a chat) opens that challenge first.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("c");
+    const t = setTimeout(() => setFocus(id), 0);
+    supabase?.rpc("top_rules").then(({ data }) => setTopRules(((data ?? []) as { rule: string }[]).map((x) => x.rule)));
+    return () => clearTimeout(t);
+  }, []);
 
   const fetchAll = useCallback(async () => {
     if (!supabase) return [];
@@ -146,7 +157,9 @@ export function ChallengeBoard() {
 
   const live = real.filter((c) => c.status === "live");
   const all = [...live, ...(showSamples ? demo : [])];
-  const shown = all.filter((c) => (tab === "results" ? c.done : tab === "following" ? c.following && !c.done : !c.done));
+  const focused = focus ? real.find((c) => c.id === focus && c.status === "live") : undefined;
+  const shown = [...(focused ? [focused] : []), ...all.filter((c) => c.id !== focused?.id && (tab === "results" ? c.done : tab === "following" ? c.following && !c.done : !c.done))];
+  const ruleList = [...new Set([...topRules, ...rules])];
   const forMe = real.filter((c) => c.status === "pending" && c.b === me);
   const sent = real.filter((c) => c.status === "pending" && c.a === me);
   const update = (id: string, fn: (c: Challenge) => Challenge) => setReal((l) => l.map((c) => (c.id === id ? fn(c) : c)));
@@ -162,7 +175,7 @@ export function ChallengeBoard() {
           <input value={ruleQuery} onChange={(e) => setRuleQuery(e.target.value)} placeholder="Search rules" className="w-full bg-transparent font-semibold text-ink outline-none placeholder:text-muted" />
         </label>
         <ul className="mt-[10px] px-[10px]">
-          {rules
+          {ruleList
             .filter((r) => r.toLowerCase().includes(ruleQuery.toLowerCase()))
             .map((r) => (
               <li key={r}>
@@ -280,7 +293,7 @@ function MediaPicker({ file, onPick }: { file: File | null; onPick: (f: File | n
 function NewChallenge({ me, rule, onClose, onSent }: { me: string; rule: string; onClose: () => void; onSent: () => void }) {
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<Person[]>([]);
-  const [opponent, setOpponent] = useState<Person | null>(null);
+  const [opponents, setOpponents] = useState<Person[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -303,13 +316,14 @@ function NewChallenge({ me, rule, onClose, onSent }: { me: string; rule: string;
   }, [query, me]);
 
   async function send() {
-    if (!opponent || !file) return setMsg("Pick someone and add your attempt.");
+    if (!opponents.length || !file) return setMsg("Pick someone and add your attempt.");
     if (file.size > 50 * 1024 * 1024) return setMsg("Files can be up to 50 MB.");
     setBusy(true);
     setMsg(null);
     try {
       const media_a = await upload(me, file);
-      const { error } = await supabase!.from("challenges").insert({ challenger_id: me, opponent_id: opponent.id, rule, media_a });
+      // Like the old app's "challenge people": one challenge for each person picked, with the same attempt.
+      const { error } = await supabase!.from("challenges").insert(opponents.map((o) => ({ challenger_id: me, opponent_id: o.id, rule, media_a })));
       if (error) throw error;
       onSent();
       onClose();
@@ -328,19 +342,23 @@ function NewChallenge({ me, rule, onClose, onSent }: { me: string; rule: string;
         </div>
         <button onClick={onClose} aria-label="Close" className="text-muted hover:text-ink"><X className="size-4" /></button>
       </div>
-      {opponent ? (
-        <div className="flex items-center gap-3 rounded-[12px] bg-bg px-3 py-2">
-          <Avatar person={opponent} size={30} />
-          <span className="flex-1 text-[13px] font-bold">{opponent.name}</span>
-          <button onClick={() => setOpponent(null)} className="text-xs font-bold text-primary">Change</button>
-        </div>
-      ) : (
+      {opponents.length > 0 && (
+        <ul className="flex flex-wrap gap-2">
+          {opponents.map((o) => (
+            <li key={o.id} className="flex items-center gap-2 rounded-full bg-bg py-1 pl-1 pr-3 text-[12px] font-bold">
+              <Avatar person={o} size={22} /> {o.name}
+              <button aria-label={`Remove ${o.name}`} onClick={() => setOpponents((l) => l.filter((x) => x.id !== o.id))} className="text-muted hover:text-live"><X className="size-3" /></button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {opponents.length < 10 && (
         <>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Who do you challenge?" className="h-10 w-full rounded-[12px] bg-bg px-3 text-[13px] font-semibold outline-none placeholder:text-muted" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={opponents.length ? "Challenge more people" : "Who do you challenge?"} className="h-10 w-full rounded-[12px] bg-bg px-3 text-[13px] font-semibold outline-none placeholder:text-muted" />
           <ul className="max-h-[200px] overflow-y-auto">
-            {found.map((p) => (
+            {found.filter((p) => !opponents.some((o) => o.id === p.id)).map((p) => (
               <li key={p.id}>
-                <button onClick={() => setOpponent(p)} className="flex w-full items-center gap-3 rounded-[10px] px-2 py-1.5 text-left hover:bg-bg">
+                <button onClick={() => setOpponents((l) => [...l, p])} className="flex w-full items-center gap-3 rounded-[10px] px-2 py-1.5 text-left hover:bg-bg">
                   <Avatar person={p} size={30} />
                   <span className="truncate text-[13px] font-bold">{p.name}</span>
                 </button>
@@ -352,7 +370,7 @@ function NewChallenge({ me, rule, onClose, onSent }: { me: string; rule: string;
       <MediaPicker file={file} onPick={setFile} />
       {msg && <p className="text-xs font-semibold text-live">{msg}</p>}
       <button onClick={send} disabled={busy} className="h-10 w-full rounded-[10px] bg-primary text-[13px] font-bold text-white disabled:opacity-60">
-        {busy ? "Sending…" : "Send challenge"}
+        {busy ? "Sending…" : opponents.length > 1 ? `Challenge ${opponents.length} people` : "Send challenge"}
       </button>
     </Card>
   );
@@ -439,8 +457,8 @@ function ChallengeCard({
   const pa = Math.round((votesA / total) * 100);
   const isPlayer = !!me && (me === c.a || me === c.b);
   const canVote = !voted && !c.done && !isPlayer;
-  const winner = votesA >= votesB ? "a" : "b";
-  const label = (side: "a" | "b") => (c.done ? (side === winner ? "WINNER" : "") : voted === side ? "VOTED" : isPlayer ? "" : "VOTE");
+  const winner = votesA === votesB ? null : votesA > votesB ? "a" : "b";
+  const label = (side: "a" | "b") => (c.done ? (winner === null ? "TIE" : side === winner ? "WINNER" : "") : voted === side ? "VOTED" : isPlayer ? "" : "VOTE");
 
   useEffect(() => {
     if (c.real) supabase?.rpc("add_challenge_view", { cid: c.id });
@@ -504,6 +522,7 @@ function ChallengeCard({
         </button>
         <span className="flex items-center gap-2"><Eye className="size-5 text-muted" /> {c.views}</span>
         <span className="flex items-center gap-2"><MessageSquare className="size-5 text-muted" /> {comments.length}</span>
+        {c.real && <ShareToChat type="challenge" id={c.id} />}
       </div>
       {comments.length > 0 && (
         <ul className="space-y-1 border-t border-line px-[25px] py-3 text-xs font-semibold text-muted">
