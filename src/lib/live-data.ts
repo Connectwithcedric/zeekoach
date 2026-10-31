@@ -126,6 +126,7 @@ export function registerPlace(p: PlaceRow) {
     ownerId: p.owner_id,
     description: p.description,
     indoor: p.indoor,
+    placeId: p.id,
   });
 }
 

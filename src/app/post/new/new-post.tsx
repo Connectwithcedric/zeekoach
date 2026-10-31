@@ -7,6 +7,7 @@ import { ImagePlus, X } from "lucide-react";
 import { AuthCard, FormMessage, NotConfigured, SubmitButton } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
 import { PeoplePicker } from "@/components/people-picker";
+import { PlacePicker, type PickedPlace } from "@/components/place-picker";
 import { supabase, type Profile } from "@/lib/supabase";
 
 const MAX_PHOTO = 10 * 1024 * 1024;
@@ -20,6 +21,7 @@ export function NewPost() {
   const [items, setItems] = useState<{ file: File; url: string }[]>([]);
   const [caption, setCaption] = useState("");
   const [tags, setTags] = useState<Profile[]>([]);
+  const [place, setPlace] = useState<PickedPlace | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -69,7 +71,7 @@ export function NewPost() {
       urls.push(supabase.storage.from("posts").getPublicUrl(path).data.publicUrl);
     }
     const kind = isVideo ? "video" : urls.length > 1 ? "album" : "photo";
-    const { data, error } = await supabase.from("posts").insert({ author_id: user.id, kind, media: urls, caption: caption.trim() }).select("id").single();
+    const { data, error } = await supabase.from("posts").insert({ author_id: user.id, kind, media: urls, caption: caption.trim(), place_id: place?.id ?? null }).select("id").single();
     if (error || !data) {
       setBusy(false);
       return setMsg(error?.message ?? "Couldn't share the post.");
@@ -105,6 +107,10 @@ export function NewPost() {
           <span className="text-[13px] font-bold">Caption</span>
           <textarea value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={2200} rows={3} placeholder="Say something about it… Use #hashtags and @usernames." className="mt-2 w-full resize-none rounded-[12px] bg-bg px-4 py-3 text-[14px] font-semibold outline-none ring-primary placeholder:text-muted focus:ring-2" />
         </label>
+        <div>
+          <span className="mb-2 block text-[13px] font-bold">Location</span>
+          <PlacePicker value={place} onChange={setPlace} placeholder="Where was it? (gym, park, studio…)" />
+        </div>
         <div>
           <span className="mb-2 block text-[13px] font-bold">Tag people</span>
           <PeoplePicker value={tags} onChange={setTags} exclude={[user.id]} placeholder="Who's in it?" />
