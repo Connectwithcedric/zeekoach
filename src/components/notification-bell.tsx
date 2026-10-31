@@ -84,7 +84,10 @@ export function NotificationBell() {
       </button>
       {open && (
         <div className="absolute right-0 top-9 z-50 w-[320px] overflow-hidden rounded-[16px] bg-surface shadow-[0_10px_40px_rgba(25,26,30,0.15)]">
-          <p className="border-b border-line px-4 py-3 text-[15px] font-bold">Notifications</p>
+          <p className="flex items-center justify-between border-b border-line px-4 py-3 text-[15px] font-bold">
+            Notifications
+            {user && <Link href="/notifications" onClick={() => setOpen(false)} className="text-xs font-bold text-primary">See all</Link>}
+          </p>
           {!user ? (
             <p className="px-4 py-6 text-center text-[13px] font-semibold text-muted">
               <Link href="/login" className="font-bold text-primary">Log in</Link> to see your notifications.
@@ -100,7 +103,7 @@ export function NotificationBell() {
                     <Link href={n.target || "/"} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 hover:bg-bg">
                       {actor && <Avatar person={actor} size={36} />}
                       <span className="min-w-0 flex-1 text-[13px] leading-snug">
-                        <b>{n.actor_id ? (actor?.name ?? "Someone") : "ZeeKoach"}</b> {n.text}
+                        <b>{n.actor_id ? (actor?.name ?? "Someone") : "zKoach"}</b> {n.text}
                         <span className="block text-[11px] font-semibold text-muted">{ago(n.created_at)}</span>
                       </span>
                     </Link>

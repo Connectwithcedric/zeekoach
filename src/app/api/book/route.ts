@@ -8,10 +8,11 @@ export async function POST(req: Request) {
   if (!user) return json({ error: "Log in to book." }, 401);
   const { sessionId, guests: rawGuests } = (await req.json()) as { sessionId: string; guests: number };
 
-  const { rows } = await pool.query("select id, title, price, pricing, capacity, booked, starts_at from public.sessions where id = $1", [sessionId]);
+  const { rows } = await pool.query("select id, title, price, pricing, capacity, booked, starts_at, status from public.sessions where id = $1", [sessionId]);
   const s = rows[0];
   if (!s) return json({ error: "This session no longer exists." }, 404);
   if (new Date(s.starts_at) < new Date()) return json({ error: "This session has already started." }, 400);
+  if (s.status === "cancelled") return json({ error: "This session was cancelled by the Koach." }, 400);
   const guests = s.pricing === "private" ? 1 : Math.min(20, Math.max(1, Math.floor(Number(rawGuests) || 1)));
   if (s.booked + guests > s.capacity) return json({ error: "Sorry, there aren't enough spots left." }, 409);
   const total = priceFor(Number(s.price), s.pricing, guests);

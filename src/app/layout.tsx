@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
+import { OnboardingGate } from "@/components/onboarding-gate";
 import { TopNav } from "@/components/top-nav";
 import "./globals.css";
 
@@ -11,9 +12,11 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: { default: "ZeeKoach", template: "%s · ZeeKoach" },
+  title: { default: "zKoach", template: "%s · zKoach" },
   description: "Find a Koach near you, book sessions and train together.",
 };
+
+export const viewport: Viewport = { themeColor: "#6b48ff", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -21,6 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full font-sans">
         <div className="mx-auto w-full max-w-[1440px] px-4 pb-24 pt-4 sm:px-6 lg:pb-10 xl:px-10 xl:pt-[30px]">
           <AuthProvider>
+            <OnboardingGate />
             <TopNav />
             {children}
           </AuthProvider>

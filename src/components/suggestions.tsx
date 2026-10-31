@@ -38,7 +38,7 @@ export function FollowSuggestions() {
       <CardHeader title="Follow Suggestions" href="/search?q=a" />
       <ul className="mt-[13px] space-y-[5px] px-[15px]">
         {list.map((p) => (
-          <PersonRow key={p.id} person={p} sub={p.real ? p.bio?.slice(0, 30) || "New on ZeeKoach" : <FollowerStack />} />
+          <PersonRow key={p.id} person={p} sub={p.real ? p.bio?.slice(0, 30) || "New on zKoach" : <FollowerStack />} />
         ))}
       </ul>
     </Card>

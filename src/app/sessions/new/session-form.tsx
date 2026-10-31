@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthCard, Field, FormMessage, NotConfigured, SubmitButton } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
+import { PlacePicker, type PickedPlace } from "@/components/place-picker";
 import { geocode } from "@/lib/geo";
 import { reloadSessions, type SessionRow } from "@/lib/live-data";
 import { supabase } from "@/lib/supabase";
@@ -42,6 +43,8 @@ const blank = {
   location_name: "",
   address: "",
   meet_up: "",
+  repeat: "once" as "once" | "weekly",
+  weeks: "4",
 };
 
 function Choice<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void }) {
@@ -84,6 +87,7 @@ export function SessionForm() {
   const [v, setV] = useState(() => ({ ...blank, date: localDate(new Date(Date.now() + 86_400_000)) }));
   const [loaded, setLoaded] = useState(!editId);
   const [busy, setBusy] = useState(false);
+  const [place, setPlace] = useState<PickedPlace | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const set = (patch: Partial<typeof blank>) => setV((prev) => ({ ...prev, ...patch }));
 
@@ -115,6 +119,8 @@ export function SessionForm() {
             location_name: r.location_name,
             address: r.address,
             meet_up: r.meet_up,
+            repeat: "once",
+            weeks: "4",
           });
         }
         setLoaded(true);
@@ -147,7 +153,7 @@ export function SessionForm() {
     setBusy(true);
     setMsg(null);
     const inPerson = v.format === "in-person";
-    const where = inPerson ? (await geocode([v.address, v.location_name].filter(Boolean).join(", "))) ?? (await geocode(v.location_name)) : null;
+    const where = inPerson && place?.lat != null ? { lat: place.lat, lng: place.lng! } : inPerson ? (await geocode([v.address, v.location_name].filter(Boolean).join(", "))) ?? (await geocode(v.location_name)) : null;
     const row = {
       koach_id: user.id,
       title: v.title.trim(),
@@ -165,10 +171,18 @@ export function SessionForm() {
       location_name: v.format === "stream" ? "Online" : v.location_name.trim(),
       address: v.format === "stream" ? "" : v.address.trim(),
       meet_up: v.format === "stream" ? "" : v.meet_up.trim(),
+      place_id: inPerson ? place?.id ?? null : null,
       lat: where?.lat ?? null,
       lng: where?.lng ?? null,
     };
-    const { error } = editId ? await supabase.from("sessions").update(row).eq("id", editId) : await supabase.from("sessions").insert(row);
+    // A weekly class is one session per week, all in the same series, like the old app's "schedule sessions".
+    const count = !editId && v.repeat === "weekly" ? Math.min(26, Math.max(2, Number(v.weeks) || 2)) : 1;
+    const series_id = count > 1 ? crypto.randomUUID() : undefined;
+    const rows = Array.from({ length: count }, (_, i) => {
+      const shift = i * 7 * 86_400_000;
+      return { ...row, ...(series_id ? { series_id } : {}), starts_at: new Date(starts.getTime() + shift).toISOString(), ends_at: new Date(ends.getTime() + shift).toISOString() };
+    });
+    const { error } = editId ? await supabase.from("sessions").update(row).eq("id", editId) : await supabase.from("sessions").insert(rows);
     setBusy(false);
     if (error) return setMsg(error.message);
     await reloadSessions();
@@ -200,7 +214,13 @@ export function SessionForm() {
             <Field label="Minimum age" type="number" min={0} max={99} value={v.age_min} onChange={(e) => set({ age_min: e.target.value })} />
           )}
         </div>
-        <Field label="Date" type="date" required value={v.date} onChange={(e) => set({ date: e.target.value })} />
+        <Field label={v.repeat === "weekly" ? "First date" : "Date"} type="date" required value={v.date} onChange={(e) => set({ date: e.target.value })} />
+        {!editId && (
+          <div className="grid grid-cols-[1fr_auto] items-end gap-3">
+            <Choice label="Repeat" value={v.repeat} options={[["once", "Just once"], ["weekly", "Every week"]] as const} onChange={(repeat) => set({ repeat })} />
+            {v.repeat === "weekly" && <Field label="For how many weeks" type="number" min={2} max={26} value={v.weeks} onChange={(e) => set({ weeks: e.target.value })} />}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Starts" type="time" required value={v.start} onChange={(e) => set({ start: e.target.value })} />
           <Field label="Ends" type="time" required value={v.end} onChange={(e) => set({ end: e.target.value })} />
@@ -209,6 +229,10 @@ export function SessionForm() {
         {v.format === "in-person" && (
           <>
             <Choice label="Area" value={v.indoor ? "indoor" : "outdoor"} options={[["indoor", "Indoor"], ["outdoor", "Outdoor"]] as const} onChange={(a) => set({ indoor: a === "indoor" })} />
+            <div>
+              <span className="mb-2 block text-[13px] font-bold">Listed place (optional)</span>
+              <PlacePicker value={place} onChange={(p) => { setPlace(p); if (p) set({ location_name: p.name, address: p.address }); }} placeholder="Search gyms, studios and parks on zKoach" />
+            </div>
             <Field label="Location" required value={v.location_name} onChange={(e) => set({ location_name: e.target.value })} placeholder="TeamFit Gym" />
             <Field label="Address" value={v.address} onChange={(e) => set({ address: e.target.value })} placeholder="Street and number, city" />
             <Field label="Meet-up point" value={v.meet_up} onChange={(e) => set({ meet_up: e.target.value })} placeholder="At the reception" />

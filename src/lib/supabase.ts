@@ -15,4 +15,20 @@ export type Profile = {
   bio: string;
   city: string;
   avatar_url: string | null;
+  sports?: string[];
+  hourly_rate?: number | null;
+  onboarded?: boolean;
+  birthday?: string | null;
+  id_verified?: boolean;
 };
+
+// Which social logins are switched on in Supabase (Google, Apple...), so buttons don't lead to an error page.
+export async function enabledProviders(): Promise<Record<string, boolean>> {
+  if (!url || !key) return {};
+  try {
+    const r = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } });
+    return ((await r.json()) as { external?: Record<string, boolean> }).external ?? {};
+  } catch {
+    return {};
+  }
+}

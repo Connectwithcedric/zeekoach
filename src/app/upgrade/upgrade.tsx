@@ -6,6 +6,7 @@ import { BadgeCheck, CalendarClock, Star } from "lucide-react";
 import { AuthCard, FormMessage, NotConfigured, SubmitButton } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
+import { Plans } from "./plans";
 
 type Application = { sports: string; experience: string; certificates: string; website: string; status: "pending" | "approved" | "declined" };
 
@@ -18,6 +19,15 @@ const field = "mt-2 h-11 w-full rounded-[12px] bg-bg px-4 text-[14px] font-semib
 
 // Members become Koaches in one tap; Koaches apply to become verified ProKoaches.
 export function Upgrade() {
+  return (
+    <>
+      <Plans />
+      <ProKoachCard />
+    </>
+  );
+}
+
+function ProKoachCard() {
   const { ready, user, profile, refresh } = useAuth();
   const [app, setApp] = useState<Application | null | undefined>(undefined);
   const [form, setForm] = useState({ sports: "", experience: "", certificates: "", website: "" });
@@ -57,7 +67,7 @@ export function Upgrade() {
   if (!ready) return <AuthCard title="Upgrade to ProKoach"><p className="text-[13px] font-semibold text-muted">Loading…</p></AuthCard>;
   if (!user || !profile)
     return (
-      <AuthCard title="Upgrade to ProKoach" sub="Coach on ZeeKoach and stand out as a verified pro.">
+      <AuthCard title="Upgrade to ProKoach" sub="Coach on zKoach and stand out as a verified pro.">
         {perksList}
         <Link href="/signup" className="flex h-11 items-center justify-center rounded-[12px] bg-primary text-[14px] font-bold text-white">Create an account</Link>
         <p className="mt-4 text-center text-[13px] font-semibold text-muted">Already have one? <Link href="/login" className="font-bold text-primary">Log in</Link></p>

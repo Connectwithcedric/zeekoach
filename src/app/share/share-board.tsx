@@ -28,9 +28,9 @@ const referrals = [
 ];
 
 const ads: { id: string; tab: "ads" | "shared" | "recruitment"; title: string; sub: string; image: PhotoKey; cta: string }[] = [
-  { id: "a1", tab: "ads", title: "ZeeKoach", sub: "The only Sports Social Marketplace", image: "bike2", cta: "Share & Earn" },
-  { id: "a2", tab: "ads", title: "ZeeKoach", sub: "Find a Koach near you", image: "tennis", cta: "Share & Earn" },
-  { id: "a3", tab: "shared", title: "ZeeKoach", sub: "You shared this on Instagram · 3 days ago", image: "gym", cta: "Share again" },
+  { id: "a1", tab: "ads", title: "zKoach", sub: "The only Sports Social Marketplace", image: "bike2", cta: "Share & Earn" },
+  { id: "a2", tab: "ads", title: "zKoach", sub: "Find a Koach near you", image: "tennis", cta: "Share & Earn" },
+  { id: "a3", tab: "shared", title: "zKoach", sub: "You shared this on Instagram · 3 days ago", image: "gym", cta: "Share again" },
   { id: "a4", tab: "recruitment", title: "Become a Koach", sub: "Earn 20% on every Koach you bring", image: "coach", cta: "Invite a Koach" },
 ];
 
@@ -121,7 +121,7 @@ export function ShareBoard() {
       <Card className="px-[25px] py-[22px]">
         <h1 className="text-[17px] font-bold">Help us grow and earn lifetime commissions!</h1>
         <div className="mt-3 space-y-2.5 text-[13px] font-semibold leading-relaxed text-muted">
-          <p>Promote ZeeKoach from your favourite social networks and <b className="text-ink">earn lifetime commissions.</b></p>
+          <p>Promote zKoach from your favourite social networks and <b className="text-ink">earn lifetime commissions.</b></p>
           <p>Earn 20% lifetime commission on every ProKoach and certified location you refer.</p>
           <p>Earn 10% lifetime commission on every passive ProKoach and certified location you refer.</p>
           <p>Earn referral fees on every transaction your direct or indirect Koaches make.</p>

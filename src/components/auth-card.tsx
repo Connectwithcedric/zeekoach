@@ -4,7 +4,7 @@ import Link from "next/link";
 export function AuthCard({ title, sub, children }: { title: string; sub?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="mx-auto mt-[30px] w-full max-w-[440px] rounded-card bg-surface px-[30px] py-[30px]">
-      <Link href="/" className="text-[17px] font-extrabold tracking-tight text-primary">ZeeKoach</Link>
+      <Link href="/" className="text-[17px] font-extrabold tracking-tight text-primary">zKoach</Link>
       <h1 className="mt-5 text-[22px] font-bold">{title}</h1>
       {sub && <p className="mt-1.5 text-[13px] font-semibold text-muted">{sub}</p>}
       <div className="mt-6">{children}</div>

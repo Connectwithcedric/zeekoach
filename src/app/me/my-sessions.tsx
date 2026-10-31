@@ -6,6 +6,7 @@ import { CalendarPlus } from "lucide-react";
 import { Card, Photo } from "@/components/ui";
 import { registerSessionRow, type SessionRow } from "@/lib/live-data";
 import { formatPrice, type PhotoKey } from "@/lib/data";
+import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 type Item = { row: SessionRow; guests?: number };
@@ -23,7 +24,7 @@ export function MySessions({ userId, isKoach }: { userId: string; isKoach: boole
     const since = new Date(Date.now() - 86_400_000).toISOString();
     (async () => {
       if (isKoach) {
-        const { data } = await supabase!.from("sessions").select("*, koach:profiles!sessions_koach_id_fkey(*)").eq("koach_id", userId).gte("ends_at", since).order("starts_at");
+        const { data } = await supabase!.from("sessions").select("*, koach:profiles!sessions_koach_id_fkey(*)").eq("koach_id", userId).gte("ends_at", since).eq("status", "scheduled").order("starts_at");
         if (alive) setItems(((data ?? []) as SessionRow[]).map((row) => ({ row })));
       } else {
         const { data } = await supabase!
@@ -44,9 +45,8 @@ export function MySessions({ userId, isKoach }: { userId: string; isKoach: boole
   }, [userId, isKoach]);
 
   async function cancel(id: string) {
-    if (!supabase) return;
-    const { error } = await supabase.from("bookings").update({ status: "cancelled" }).eq("session_id", id).eq("user_id", userId);
-    if (!error) setItems((list) => list?.filter((i) => i.row.id !== id) ?? null);
+    const r = await api("/api/bookings/cancel", { sessionId: id });
+    if (!r.error) setItems((list) => list?.filter((i) => i.row.id !== id) ?? null);
   }
 
   const heading = isKoach ? "Your sessions" : "Your bookings";
@@ -68,8 +68,8 @@ export function MySessions({ userId, isKoach }: { userId: string; isKoach: boole
     <Card className="px-[25px] pb-[15px] pt-[21px]">
       <div className="flex items-center justify-between">
         <h2 className="text-[15px] font-bold">{heading}</h2>
-        <Link href={isKoach ? "/sessions/new" : "/sessions"} className="text-xs font-bold text-primary">
-          {isKoach ? "+ New session" : "Find more"}
+        <Link href={isKoach ? "/sessions/new" : "/bookings"} className="text-xs font-bold text-primary">
+          {isKoach ? "+ New session" : "All bookings"}
         </Link>
       </div>
       {!items ? (

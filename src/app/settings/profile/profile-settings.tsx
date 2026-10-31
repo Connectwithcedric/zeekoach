@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Camera } from "lucide-react";
 import { AuthCard, Field, FormMessage, NotConfigured, SubmitButton } from "@/components/auth-card";
+import { SettingsShell } from "@/components/settings-shell";
 import { useAuth } from "@/components/auth-provider";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { supabase } from "@/lib/supabase";
@@ -53,17 +54,14 @@ export function ProfileSettings() {
       .from("profiles")
       .update({ name: String(f.get("name")).trim(), username, city: String(f.get("city")).trim(), bio: String(f.get("bio")).trim(), role: f.get("role") === "koach" ? "koach" : "member" })
       .eq("id", user.id);
-    const password = String(f.get("password") ?? "");
-    const pw = password ? await supabase.auth.updateUser({ password }) : { error: null };
     setBusy(false);
     if (error) return setMsg({ tone: "error", text: error.code === "23505" ? "That username is taken." : error.message });
-    if (pw.error) return setMsg({ tone: "error", text: pw.error.message });
     await refresh();
     router.push("/me");
   }
 
   return (
-    <AuthCard title="Edit profile">
+    <SettingsShell title="Edit profile">
       <div className="mb-6 flex items-center gap-4">
         <ProfileAvatar profile={profile} size={72} />
         <label className="flex cursor-pointer items-center gap-2 rounded-[10px] bg-bg px-4 py-2.5 text-[13px] font-bold text-primary hover:bg-primary-soft">
@@ -88,10 +86,9 @@ export function ProfileSettings() {
             </div>
           </fieldset>
         )}
-        <Field label="New password (optional)" name="password" type="password" autoComplete="new-password" minLength={6} placeholder="Leave empty to keep it" />
         {msg && <FormMessage tone={msg.tone}>{msg.text}</FormMessage>}
         <SubmitButton busy={busy}>Save</SubmitButton>
       </form>
-    </AuthCard>
+    </SettingsShell>
   );
 }

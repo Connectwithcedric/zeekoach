@@ -52,6 +52,7 @@ export type Person = {
   streaming?: string; // class name when live right now
   real?: boolean; // a signed-up account from the database, not demo data
   avatarUrl?: string | null;
+  username?: string | null;
 };
 
 export const people: Person[] = [
@@ -79,7 +80,7 @@ export const people: Person[] = [
   { id: "lena", name: "Lena Novak", role: "koach", photo: "lena", distanceKm: 4.8, rating: 4.7, reviews: 21, followers: 720, following: 150, subscribers: 61, bio: "Running coach." },
 ];
 
-export type Location = { id: string; name: string; followers: number; address: string; meetUp: string; lat: number; lng: number; rating: number; reviews: number; verified?: boolean; real?: boolean; listed?: boolean; photo?: string | null; ownerId?: string; description?: string; indoor?: boolean };
+export type Location = { id: string; name: string; followers: number; address: string; meetUp: string; lat: number; lng: number; rating: number; reviews: number; verified?: boolean; real?: boolean; listed?: boolean; photo?: string | null; ownerId?: string; description?: string; indoor?: boolean; placeId?: string };
 
 export const locations: Location[] = [
   { id: "teamfit", name: "TeamFit Gym & Fitness", followers: 396, address: "Knjeginje Zorke 12, Belgrade, Serbia", meetUp: "Meet at reception on the ground floor. Lockers and showers are available, bring a padlock.", lat: 44.8059, lng: 20.4693, rating: 4.2, reviews: 57, verified: true },
@@ -112,6 +113,9 @@ export type Session = {
   equipment: string;
   locationId: string;
   real?: boolean;
+  seriesId?: string; // the class this session is one date of
+  cancelled?: boolean;
+  startsAt?: string;
 };
 
 export const sessions: Session[] = [

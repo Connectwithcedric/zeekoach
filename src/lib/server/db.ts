@@ -5,7 +5,13 @@ import { createClient } from "@supabase/supabase-js";
 
 const dbUrl = process.env.POSTGRES_URL ?? process.env.POSTGRES_URL_NON_POOLING;
 // Supabase uses a certificate chain Node doesn't know; the connection is still encrypted.
-export const pool = dbUrl ? new pg.Pool({ connectionString: dbUrl.replace(/[?&]sslmode=[^&]*/, ""), ssl: { rejectUnauthorized: false }, max: 3 }) : null;
+// Dropping sslmode with a plain regex left "&supa=..." stuck to the database name, so parse the URL instead.
+function withoutSslMode(u: string) {
+  const parsed = new URL(u);
+  parsed.searchParams.delete("sslmode");
+  return parsed.toString();
+}
+export const pool = dbUrl ? new pg.Pool({ connectionString: withoutSslMode(dbUrl), ssl: { rejectUnauthorized: false }, max: 3 }) : null;
 
 export const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
@@ -37,11 +43,12 @@ export async function saveBooking(sessionId: string, userId: string, guests: num
   );
 }
 
-// Gift credit left: gifts received minus what confirmed bookings used (other than the one being rebooked).
+// What a booking can use from the wallet: the whole balance (gift credit, money added or received, earnings),
+// plus whatever an existing booking for this same session already used, since rebooking replaces it.
 export async function giftCredit(userId: string, exceptSessionId?: string) {
   const { rows } = await pool!.query(
-    `select coalesce((select sum(amount) from public.gift_cards where recipient_id = $1), 0)
-          - coalesce((select sum(credit_used) from public.bookings where user_id = $1 and status = 'confirmed' and session_id is distinct from $2), 0) as credit`,
+    `select (select balance from public.wallet_summary($1))
+          + coalesce((select sum(credit_used) from public.bookings where user_id = $1 and status = 'confirmed' and session_id = $2), 0) as credit`,
     [userId, exceptSessionId ?? null],
   );
   return Math.max(0, Math.round(Number(rows[0]?.credit ?? 0) * 100) / 100);

@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   const checkout = await stripe.checkout.sessions.create({
     mode: "payment",
     customer_email: user.email,
-    line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: Math.round(amount * 100), product_data: { name: `ZeeKoach gift card for ${to.name || "a friend"}` } } }],
+    line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: Math.round(amount * 100), product_data: { name: `zKoach gift card for ${to.name || "a friend"}` } } }],
     metadata: { kind: "gift", buyer_id: user.id, recipient_id: to.id, amount: String(amount), message: String(message).slice(0, 200) },
     success_url: `${origin}/wallet/gift?paid={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/wallet/gift?to=${to.id}`,

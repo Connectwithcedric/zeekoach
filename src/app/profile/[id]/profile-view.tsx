@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { FollowSuggestions } from "@/components/suggestions";
-import { CalendarClock, Ellipsis, Globe, Pencil, Radio, Star } from "lucide-react";
+import { CalendarClock, Globe, Pencil, Radio, Star } from "lucide-react";
 import { FacebookIcon, InstagramIcon, LinkedinIcon, TiktokIcon, TwitterIcon } from "@/components/brand-icons";
 import { ClassCard } from "@/components/class-card";
 import { FollowToggle } from "@/components/follow-toggle";
+import { ProfileMenu } from "@/components/profile-menu";
 import { ProfileContent } from "@/components/profile-tabs";
+import { ReviewsCard } from "@/components/reviews";
 import { Avatar, Card, Fab, OutlineButton, Photo, RightRailFooter, ThreeColumns } from "@/components/ui";
 import { roleLabel, type Person, type Session } from "@/lib/data";
+import { ShareToChat } from "@/components/share-to-chat";
+import { TipButton } from "@/components/money-modal";
 
 const socials = [Globe, LinkedinIcon, InstagramIcon, FacebookIcon, TwitterIcon, TiktokIcon];
 
@@ -21,9 +25,8 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
           <>
             <OutlineButton href="/upgrade">Upgrade to ProKoach!</OutlineButton>
             <Card className="relative px-[25px] pb-[25px] pt-[26px]">
-              <button aria-label="Profile options" className="absolute right-[25px] top-[14px] text-primary">
-                <Ellipsis className="size-5" />
-              </button>
+              <ProfileMenu personId={person.id} name={person.name} real={!!person.real} />
+              {person.real && <span className="absolute left-[25px] top-[26px]"><ShareToChat type="profile" id={person.id} label="Send profile in chat" /></span>}
               <div className="flex flex-col items-center">
                 <div className={`w-[110px] rounded-[16px] p-[3px] ${person.role === "member" ? "" : frame}`}>
                   {person.real ? (
@@ -59,6 +62,7 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
                     <Link href={person.real ? `/chat?with=${person.id}` : "/chat"} className="flex h-[38px] items-center justify-center rounded-[10px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft">
                       Message
                     </Link>
+                    {person.real && person.role !== "member" && <TipButton to={person} className="col-span-full flex h-[38px] items-center justify-center gap-1.5 rounded-[10px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft" />}
                   </>
                 )}
               </div>
@@ -85,6 +89,7 @@ export function ProfileView({ person, theirSessions, isOwner, onFollow }: { pers
                 ))}
               </div>
             </Card>
+            {person.real && person.role !== "member" && <ReviewsCard koachId={person.id} />}
           </>
         }
         center={
