@@ -25,6 +25,8 @@ export type SessionRow = {
   meet_up: string;
   lat: number | null;
   lng: number | null;
+  series_id?: string | null;
+  status?: "scheduled" | "cancelled";
   koach: Profile | null;
 };
 
@@ -92,6 +94,9 @@ export function registerSessionRow(r: SessionRow): Session {
     equipment: r.equipment,
     locationId,
     real: true,
+    seriesId: r.series_id ?? r.id,
+    cancelled: r.status === "cancelled",
+    startsAt: r.starts_at,
   };
   registerSession(session);
   return session;
@@ -134,7 +139,7 @@ function loadUpcoming() {
   if (!supabase) return Promise.resolve();
   pending ??= (async () => {
     const since = new Date(Date.now() - 86_400_000).toISOString();
-    const { data } = await supabase!.from("sessions").select(select).gte("ends_at", since).order("starts_at").limit(200);
+    const { data } = await supabase!.from("sessions").select(select).gte("ends_at", since).eq("status", "scheduled").order("starts_at").limit(200);
     await loadPlaces();
     (data as SessionRow[] | null)?.forEach(registerSessionRow);
   })();

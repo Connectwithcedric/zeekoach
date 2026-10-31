@@ -34,7 +34,7 @@ export function SearchResults() {
       const like = `%${term}%`;
       const [ps, ss, po] = await Promise.all([
         supabase.from("profiles").select("*").or(`name.ilike.${like},username.ilike.${like},city.ilike.${like}`).limit(20),
-        supabase.from("sessions").select("*, koach:profiles!sessions_koach_id_fkey(*)").or(`title.ilike.${like},location_name.ilike.${like},description.ilike.${like}`).gte("ends_at", new Date().toISOString()).order("starts_at").limit(20),
+        supabase.from("sessions").select("*, koach:profiles!sessions_koach_id_fkey(*)").or(`title.ilike.${like},location_name.ilike.${like},description.ilike.${like}`).gte("ends_at", new Date().toISOString()).eq("status", "scheduled").order("starts_at").limit(20),
         supabase.from("posts").select(postSelect).ilike("caption", like).order("created_at", { ascending: false }).limit(12),
       ]);
       (ps.data as Profile[] | null)?.forEach(registerProfile);

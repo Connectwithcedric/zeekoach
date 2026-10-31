@@ -42,6 +42,8 @@ const blank = {
   location_name: "",
   address: "",
   meet_up: "",
+  repeat: "once" as "once" | "weekly",
+  weeks: "4",
 };
 
 function Choice<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void }) {
@@ -115,6 +117,8 @@ export function SessionForm() {
             location_name: r.location_name,
             address: r.address,
             meet_up: r.meet_up,
+            repeat: "once",
+            weeks: "4",
           });
         }
         setLoaded(true);
@@ -168,7 +172,14 @@ export function SessionForm() {
       lat: where?.lat ?? null,
       lng: where?.lng ?? null,
     };
-    const { error } = editId ? await supabase.from("sessions").update(row).eq("id", editId) : await supabase.from("sessions").insert(row);
+    // A weekly class is one session per week, all in the same series, like the old app's "schedule sessions".
+    const count = !editId && v.repeat === "weekly" ? Math.min(26, Math.max(2, Number(v.weeks) || 2)) : 1;
+    const series_id = count > 1 ? crypto.randomUUID() : undefined;
+    const rows = Array.from({ length: count }, (_, i) => {
+      const shift = i * 7 * 86_400_000;
+      return { ...row, ...(series_id ? { series_id } : {}), starts_at: new Date(starts.getTime() + shift).toISOString(), ends_at: new Date(ends.getTime() + shift).toISOString() };
+    });
+    const { error } = editId ? await supabase.from("sessions").update(row).eq("id", editId) : await supabase.from("sessions").insert(rows);
     setBusy(false);
     if (error) return setMsg(error.message);
     await reloadSessions();
@@ -200,7 +211,13 @@ export function SessionForm() {
             <Field label="Minimum age" type="number" min={0} max={99} value={v.age_min} onChange={(e) => set({ age_min: e.target.value })} />
           )}
         </div>
-        <Field label="Date" type="date" required value={v.date} onChange={(e) => set({ date: e.target.value })} />
+        <Field label={v.repeat === "weekly" ? "First date" : "Date"} type="date" required value={v.date} onChange={(e) => set({ date: e.target.value })} />
+        {!editId && (
+          <div className="grid grid-cols-[1fr_auto] items-end gap-3">
+            <Choice label="Repeat" value={v.repeat} options={[["once", "Just once"], ["weekly", "Every week"]] as const} onChange={(repeat) => set({ repeat })} />
+            {v.repeat === "weekly" && <Field label="For how many weeks" type="number" min={2} max={26} value={v.weeks} onChange={(e) => set({ weeks: e.target.value })} />}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Starts" type="time" required value={v.start} onChange={(e) => set({ start: e.target.value })} />
           <Field label="Ends" type="time" required value={v.end} onChange={(e) => set({ end: e.target.value })} />

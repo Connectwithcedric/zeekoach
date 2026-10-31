@@ -22,7 +22,7 @@ export function LiveProfile({ id }: { id: string }) {
       registerProfile(profile as Profile);
       const since = new Date(Date.now() - 86_400_000).toISOString();
       const [{ data: rows }, counts, { data: ratings }] = await Promise.all([
-        supabase!.from("sessions").select("*, koach:profiles!sessions_koach_id_fkey(*)").eq("koach_id", id).gte("ends_at", since).order("starts_at"),
+        supabase!.from("sessions").select("*, koach:profiles!sessions_koach_id_fkey(*)").eq("koach_id", id).gte("ends_at", since).eq("status", "scheduled").order("starts_at"),
         followCounts(id),
         supabase!.from("reviews").select("rating").eq("koach_id", id),
       ]);

@@ -113,6 +113,9 @@ export type Session = {
   equipment: string;
   locationId: string;
   real?: boolean;
+  seriesId?: string; // the class this session is one date of
+  cancelled?: boolean;
+  startsAt?: string;
 };
 
 export const sessions: Session[] = [

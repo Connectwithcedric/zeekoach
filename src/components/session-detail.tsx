@@ -128,9 +128,13 @@ export function SessionDetail({ session, bookedBanner = false }: { session: Sess
           </>
         )}
 
-        <Link href={`/book/${session.id}`} className="mt-6 flex h-[42px] items-center justify-center rounded-[12px] bg-primary text-[13px] font-bold text-white hover:bg-primary-strong">
-          Book
-        </Link>
+        {session.cancelled ? (
+          <p className="mt-6 flex h-[42px] items-center justify-center rounded-[12px] bg-[#fdecee] text-[13px] font-bold text-live">Cancelled</p>
+        ) : (
+          <Link href={`/book/${session.id}`} className="mt-6 flex h-[42px] items-center justify-center rounded-[12px] bg-primary text-[13px] font-bold text-white hover:bg-primary-strong">
+            Book
+          </Link>
+        )}
         <Link href={`/profile/${koach.id}`} className="mt-3 flex h-[42px] items-center justify-center rounded-[12px] bg-bg text-[13px] font-bold text-primary hover:bg-primary-soft">
           View Profile
         </Link>
