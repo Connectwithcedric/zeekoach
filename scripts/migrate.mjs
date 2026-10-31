@@ -13,6 +13,7 @@ if (!url) {
 const dir = path.join(process.cwd(), "db/migrations");
 // Supabase uses a certificate chain Node doesn't know; the connection is still encrypted.
 const client = new pg.Client({ connectionString: url.replace(/[?&]sslmode=[^&]*/, ""), ssl: { rejectUnauthorized: false } });
+client.on("notice", (n) => console.log(`migrate: ${n.severity}: ${n.message}`));
 await client.connect();
 try {
   await client.query("create table if not exists public.schema_migrations (name text primary key, applied_at timestamptz not null default now())");

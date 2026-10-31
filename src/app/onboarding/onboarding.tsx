@@ -109,7 +109,7 @@ export function Onboarding() {
     setBusy(true);
     setError("");
     const path = `${user.id}/avatar-${Date.now()}.jpg`;
-    const up = await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+    const up = await supabase.storage.from("avatars").upload(path, blob, { contentType: "image/jpeg" });
     if (up.error) {
       setBusy(false);
       return setError(`Photo upload failed: ${up.error.message}`);
