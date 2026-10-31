@@ -19,6 +19,7 @@ export type Profile = {
   hourly_rate?: number | null;
   onboarded?: boolean;
   birthday?: string | null;
+  id_verified?: boolean;
 };
 
 // Which social logins are switched on in Supabase (Google, Apple...), so buttons don't lead to an error page.

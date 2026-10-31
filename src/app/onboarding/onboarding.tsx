@@ -39,8 +39,15 @@ export function Onboarding() {
 
   // Google and Apple sign ups have no username or birthday yet, so they fill those in first.
   useEffect(() => {
-    if (!profile || step) return;
-    setTimeout(() => setStep(!profile.username || !profile.birthday ? "details" : "photo"), 0);
+    if (!profile || step || !supabase) return;
+    let alive = true;
+    // The birthday is kept privately, not on the public profile.
+    supabase.from("private_details").select("birthday").eq("user_id", profile.id).maybeSingle().then(({ data }) => {
+      if (alive) setStep(!profile.username || !data?.birthday ? "details" : "photo");
+    });
+    return () => {
+      alive = false;
+    };
   }, [profile, step]);
 
   useEffect(() => {

@@ -41,7 +41,7 @@ export function registerProfile(p: Profile) {
     photo: "coach",
     avatarUrl: p.avatar_url,
     username: p.username,
-    verified: p.role === "prokoach",
+    verified: p.role === "prokoach" || !!p.id_verified,
     real: true,
     distanceKm: 0,
     rating: 0,

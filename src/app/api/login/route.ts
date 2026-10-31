@@ -11,8 +11,8 @@ export async function POST(req: Request) {
   if (!email.includes("@")) {
     const phone = /^\+?[\d\s().-]{7,}$/.test(email) ? `+${email.replace(/\D/g, "")}` : null;
     const { rows } = await pool.query(
-      `select u.email from public.profiles p join auth.users u on u.id = p.id
-       where ($1::text is not null and p.phone = $1) or p.username = lower($2) limit 1`,
+      `select u.email from public.profiles p join auth.users u on u.id = p.id left join public.private_details d on d.user_id = p.id
+       where ($1::text is not null and d.phone = $1) or p.username = lower($2) limit 1`,
       [phone, email],
     );
     if (!rows[0]) return json({ error: "Wrong login or password." }, 400);
